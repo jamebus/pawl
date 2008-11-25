@@ -1,0 +1,419 @@
+#!/bin/sh
+#
+# $Id$
+#
+
+# Output parameters and exit to avoid recursion when scaffolding
+if [ -n "$scaffolding" ]; then
+	echo "dvd_source=\"$dvd_source\""
+	echo "output=\"$output\""
+	echo "audio_encoder=\"$audio_encoder\""
+	echo "audio_tracks=\"$audio_tracks\""
+	echo "subtitles=\"$subtitles\""
+	echo "quality=\"$quality\""
+	echo "anamorphic=\"$anamorphic\""
+	echo "title=\"$title\""
+	echo "chapters=\"$chapters\""
+	echo "x264_filter_options=\"$x264_filter_options\""
+	echo "x264_nr_options=\"$x264_nr_options\""
+	echo "deinterlace=\"$deinterlace\""
+	echo "deinterlace_params=\"$deinterlace_params\""
+	echo "decomb=\"$decomb\""
+	echo "decomb_params=\"$decomb_params\""
+	exit
+fi
+
+# Scaffold
+if [ $0 = '../../etc/hb' ]; then
+	scaffolding='1'
+	echo -n 'Scaffolding'
+
+	# Defaults
+	dvd_source=''
+	output=''
+	audio_encoder='ac3'
+	audio_tracks='1'
+	subtitles=''
+	quality='0.66'
+	anamorphic='No'
+	title='1'
+	chapters='all'
+	x264_filter_options='filter=-2,-1'
+	x264_nr_options='nr=0'
+	deinterlace=''
+	deinterlace_params=''
+	decomb='No'
+	decomb_params=''
+
+	# Make sure these variables are exported to run in order to set
+	# defaults for variables not present and also pass along the
+	# scaffolding variable.
+	export scaffolding \
+	       dvd_source \
+	       output \
+	       audio_encoder \
+	       audio_tracks \
+	       subtitles \
+	       quality \
+	       anamorphic \
+	       title \
+	       chapters \
+	       x264_filter_options \
+	       x264_nr_options \
+	       deinterlace \
+	       deinterlace_params \
+	       decomb \
+	       decomb_params
+
+	if [ -r run ]; then
+		echo ' with existing settings!!!'
+		cp run run.old
+		eval `sh ./run`
+	else
+		echo ' !!!'
+	fi
+	cat <<_EOF_ > run
+#!/bin/sh
+
+if [ -z "\$scaffolding" ]; then
+	set -ex
+fi
+
+# Source footage.  Needs to be a directory, not a DVD device.
+dvd_source='$dvd_source'
+
+# Output filename.  Do not include a filename extension.
+output='$output'
+
+# Audio encoder.  [faac/lame/vorbis/ac3] Default: ac3
+audio_encoder='$audio_encoder'
+
+# Audio tracks to include.  [int space separated or none] Default: 1
+audio_tracks='$audio_tracks'
+
+# Subtitles to include.  Default: none
+subtitles='$subtitles'
+
+# Video quality.  [0.0 - 1.0] Default: 0.66
+quality='$quality'
+
+# Anamorphic video?  [YES/NO/Yes/No/1/0] Default: Yes
+anamorphic='$anamorphic'
+
+# Title to work on.  Default: 1
+title='$title'
+
+# Chapters to work on.  Default: all
+chapters='$chapters'
+
+# x264 filter parameters
+# filter 0,0 for noisy or bad sources and -2,-1 for good sources. 
+x264_filter_options='$x264_filter_options'
+
+# x264 noise reduction parameters
+# Use nr=0 for good sources. Max nr = 150.  If you use more it blocks more.
+x264_nr_options='$x264_nr_options'
+
+# Which deinterlacing filter to use?  [NO/No/adaptive/pullup]
+deinterlace='$deinterlace'
+
+# If you're using a deinterlacing filter (set above) you may set it's
+# parameters here.
+# adaptive YM:FD:MM:QP   default: 0:-1:-1:1
+# pullup   L:R:T:B:SB:MP default: 1:1:4:4:0:0
+deinterlace_params='$deinterlace_params'
+
+# Selectively deinterlace frames when combing is detected (32detect).
+# [YES/NO/Yes/No/1/0] Default: No
+# This may be also combined with the deinterlacer to catch frames that slip
+# through due to field editing and such.
+decomb='$decomb'
+
+# If you're using decomb (set above) you may set it's parameters here.
+# MO:ME:MT:ST:BT:BX:BY default: 1:2:6:9:80:16:16
+decomb_params='$decomb_params'
+
+. ../../etc/hb
+_EOF_
+	echo 'Done.'
+	exit
+fi
+
+# Ensure input and output files are defined
+if [ -z "$dvd_source" ]; then
+	echo "ERROR: dvd_source is not defined." 1>&2
+	exit 1
+fi
+if [ -z "$output" ]; then
+	echo "ERROR: output is not defined." 1>&2
+	exit 1
+fi
+
+# defaults
+x264_options="
+$x264_filter_options
+$x264_nr_options
+ref=3
+mixed-refs
+bframes=3
+b-pyramid
+b-rdo
+bime
+weightb
+subme=6
+trellis=0
+analyse=all
+8x8dct
+me=umh
+no-fast-pskip
+no-dct-decimate
+cqm=/video/etc/cqm/eqm_avc_hr.cfg"
+
+# defaults
+x264_options="
+$x264_filter_options
+$x264_nr_options
+ref=3
+mixed-refs
+direct=none
+bframes=3
+b-pyramid
+bime
+weightb
+subme=1
+trellis=0
+partitions=i8x8,p8x8,b8x8
+8x8dct
+me=umh
+no-fast-pskip
+no-dct-decimate
+deadzone-inter=4
+deadzone-intra=6
+cqm=/video/etc/cqm/m4g_hrm_v2.cfg"
+
+## No bframes and b-pyramid to work around hb mkv bugs.
+## defaults
+#x264_options="
+#$x264_filter_options
+#$x264_nr_options
+#ref=3
+#mixed-refs
+#direct=none
+#bime
+#weightb
+#subme=1
+#trellis=0
+#partitions=i8x8,p8x8,b8x8
+#8x8dct
+#me=umh
+#no-fast-pskip
+#no-dct-decimate
+#deadzone-inter=4
+#deadzone-intra=6
+#cqm=/video/etc/cqm/m4g_hrm_v2.cfg"
+
+# defaults
+x264_options="
+$x264_filter_options
+$x264_nr_options
+ref=3
+mixed-refs
+direct=auto
+bframes=3
+b-pyramid
+weightb
+subme=9
+trellis=1
+partitions=i8x8,p8x8,b8x8
+8x8dct
+me=umh
+no-fast-pskip
+no-dct-decimate
+psy-rd=1.0:1.0"
+
+test -z "$title" && title='1'
+test -z "$audio_encoder" && audio_encoder='ac3'
+test -z "$audio_tracks" && audio_tracks='1'
+test -z "$quality" && quality='0.66'
+
+# Normalize
+_x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
+_audio_tracks=`echo $audio_tracks | sed 's/[    ]\+/,/g'`
+test "$chapters" = 'all' && chapters=''
+
+# Anamorphic arg
+case "$anamorphic" in
+	[nN][oO])
+	_anamorphic_arg=''
+	anamorphic='No'
+	;;
+	0)
+	_anamorphic_arg=''
+	anamorphic='No'
+	;;
+	*)
+	_anamorphic_arg='-p'
+	anamorphic='Yes'
+	;;
+esac
+
+# build args
+_chapter_arg=''
+if [ -n "$chapters" ]; then
+	_chapter_arg="-c $chapters"
+fi
+
+#
+# figure out file format.  See:
+# http://handbrake.m0k.org/trac/wiki/Containers
+#
+
+# XXX: Unused right now
+## Use avi by default.  mkv is currently broken.
+#output_format='avi'
+## HB requires: vorbis needs ogm or mkv container
+#test "$audio_encoder" = 'vorbis' && output_format='ogm'
+## HB requires: faac needs mp4 container
+#test "$audio_encoder" = 'faac' && output_format='mp4'
+## HB requires: ac3 passthrough needs avi or mkv container
+#test "$audio_encoder" = 'ac3' && output_format='avi'
+## HB requires: mp3 needs avi or mkv container
+#test "$audio_encoder" = 'mp3' && output_format='avi'
+## HB requires: aac+ac3 needs mp4 or mkv container
+#test "$audio_encoder" = 'aac+ac3' && output_format='mp4'
+
+# Use mkv by default.  It supports everything.
+output_format='mkv'
+
+# Deinterlacing
+case "$deinterlace" in
+	adaptive)
+	_deinterlace_arg='--deinterlace'
+	;;
+	pullup)
+	_deinterlace_arg='--detelecine'
+	;;
+	*)
+	_deinterlace_arg=''
+	deinterlace='No'
+	;;
+esac
+
+if [ "$deinterlace" != 'No' -a -n "$deinterlace_params" ]; then
+	_deinterlace_arg="$_deinterlace_arg $deinterlace_params"
+fi
+
+# Decombing
+case "$decomb" in
+	[YyEeSs])
+	_decomb_arg='--decomb'
+	decomb='Yes'
+	;;
+	1)
+	_decomb_arg='--decomb'
+	decomb='Yes'
+	;;
+	*)
+	_decomb_arg=''
+	decomb='No'
+	;;
+esac
+
+if [ "$decomb" != 'No' -a -n "$decomb_params" ]; then
+	_decomb_arg="$_decomb_arg $decomb_params"
+fi
+
+set +x
+echo
+echo '*******************************************************************************'
+echo "DVD source: $dvd_source"
+echo "Output filename: ${output}.${output_format}"
+echo "Audio encoder: $audio_encoder"
+echo "Audio tracks: $audio_tracks"
+echo "Subtitles: $subtitles"
+echo "Video quality: $quality"
+echo "Anamorphic video: $anamorphic"
+echo "Video title: $title"
+if [ -n "$chapters" ]; then
+	echo "Video chapters: $chapters"
+fi
+echo "Deinterlace video: $deinterlace"
+if [ "$deinterlace" != 'No' -a -n "$deinterlace_params" ]; then
+	echo "Deinterlace params: $deinterlace_params"
+fi
+echo "Decomb video: $decomb"
+if [ "$decomb" != 'No' -a -n "$decomb_params" ]; then
+	echo "Decomb params: $decomb_params"
+fi
+echo "x264 options: $_x264_options"
+echo '*******************************************************************************'
+echo
+set -x
+
+# handle subtitles
+for _subtitle in $subtitles; do
+	_sid=$(($_subtitle - 1))
+	_track=$((20 + $_sid))
+	_track="0x${_track}"
+
+
+	# (dvd_reader.c) subtitle 00=<en> 
+	# (dvd_reader.c) subtitle 01=<es> 
+	# (dvd_reader.c) subtitle 02=<es> 
+	# (dvd_reader.c) subtitle 03=<fr> 
+	_sid_padded=`printf '%02d' $_sid`
+	_lang=`tcprobe -i "$dvd_source" 2>&1 | grep " subtitle ${_sid_padded}=" | sed -r 's,.*=<([^>]+)>[ 	]*,\1,'`
+
+	cp "${dvd_source}/VIDEO_TS/VTS_01_0.IFO" "subtitles_${_sid}.ifo"
+
+	if [ -z "$chapters" ]; then
+		tccat -i "$dvd_source" -T "$title",-1 | \
+		tcextract -x ps1 -t vob -a "$_track" | \
+		subtitle2vobsub	-i "subtitles_${_sid}.ifo" \
+				-o "subtitles_${_sid}"
+	else
+		rm -rf chapters
+		mkdir chapters
+		for _chapter in $chapters; do
+			tccat -i "$dvd_source" \
+			      -T "$title",${_chapter} > chapters/${_chapter}.vob
+		done
+
+		tccat -i chapters | \
+		tcextract -x ps1 -t vob -a "$_track" | \
+		subtitle2vobsub	-i "subtitles_${_sid}.ifo" \
+				-o "subtitles_${_sid}"
+
+		rm -rf chapters
+	fi
+
+	perl -pi -e "s/^id: /id: ${_lang}/" "subtitles_${_sid}.idx"
+done
+
+HandBrakeCLI	-i "$dvd_source" \
+		-f "${output_format}" \
+		-o "${output}.${output_format}" \
+		-t "$title" \
+		-e x264 \
+		"$_anamorphic_arg" \
+		-E "$audio_encoder" -a "$_audio_tracks" \
+		-q "$quality" \
+		"$_chapter_arg" \
+		"$_deinterlace_arg" \
+		"$_decomb_arg" \
+		-x "$_x264_options"
+
+#
+# If we're writing an AVI file, build an index so players and play it and
+# mkvmerge can mux it into an MKV container.
+#
+if [ "$output_format" = 'avi' ]; then
+	aviindex -i "${output}.${output_format}" \
+	         -o "${output}.aviindex"
+	avimerge -i "${output}.${output_format}" \
+	         -o "${output}-merged.${output_format}" \
+	         -x "${output}.aviindex"
+	rm -f "${output}.aviindex"
+	mv "${output}-merged.${output_format}" \
+	   "${output}.${output_format}"
+fi
