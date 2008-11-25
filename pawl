@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id$
+# $Id: hb,v 1.1 2008/11/25 06:29:07 bus Exp bus $
 #
 
 # Output parameters and exit to avoid recursion when scaffolding
@@ -262,25 +262,6 @@ _chapter_arg=''
 if [ -n "$chapters" ]; then
 	_chapter_arg="-c $chapters"
 fi
-
-#
-# figure out file format.  See:
-# http://handbrake.m0k.org/trac/wiki/Containers
-#
-
-# XXX: Unused right now
-## Use avi by default.  mkv is currently broken.
-#output_format='avi'
-## HB requires: vorbis needs ogm or mkv container
-#test "$audio_encoder" = 'vorbis' && output_format='ogm'
-## HB requires: faac needs mp4 container
-#test "$audio_encoder" = 'faac' && output_format='mp4'
-## HB requires: ac3 passthrough needs avi or mkv container
-#test "$audio_encoder" = 'ac3' && output_format='avi'
-## HB requires: mp3 needs avi or mkv container
-#test "$audio_encoder" = 'mp3' && output_format='avi'
-## HB requires: aac+ac3 needs mp4 or mkv container
-#test "$audio_encoder" = 'aac+ac3' && output_format='mp4'
 
 # Use mkv by default.  It supports everything.
 output_format='mkv'
