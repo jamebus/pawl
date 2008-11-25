@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: hb,v 1.1 2008/11/25 06:29:07 bus Exp bus $
+# $Id: hb,v 1.2 2008/11/25 06:30:13 bus Exp bus $
 #
 
 # Output parameters and exit to avoid recursion when scaffolding
@@ -148,69 +148,6 @@ if [ -z "$output" ]; then
 	echo "ERROR: output is not defined." 1>&2
 	exit 1
 fi
-
-# defaults
-x264_options="
-$x264_filter_options
-$x264_nr_options
-ref=3
-mixed-refs
-bframes=3
-b-pyramid
-b-rdo
-bime
-weightb
-subme=6
-trellis=0
-analyse=all
-8x8dct
-me=umh
-no-fast-pskip
-no-dct-decimate
-cqm=/video/etc/cqm/eqm_avc_hr.cfg"
-
-# defaults
-x264_options="
-$x264_filter_options
-$x264_nr_options
-ref=3
-mixed-refs
-direct=none
-bframes=3
-b-pyramid
-bime
-weightb
-subme=1
-trellis=0
-partitions=i8x8,p8x8,b8x8
-8x8dct
-me=umh
-no-fast-pskip
-no-dct-decimate
-deadzone-inter=4
-deadzone-intra=6
-cqm=/video/etc/cqm/m4g_hrm_v2.cfg"
-
-## No bframes and b-pyramid to work around hb mkv bugs.
-## defaults
-#x264_options="
-#$x264_filter_options
-#$x264_nr_options
-#ref=3
-#mixed-refs
-#direct=none
-#bime
-#weightb
-#subme=1
-#trellis=0
-#partitions=i8x8,p8x8,b8x8
-#8x8dct
-#me=umh
-#no-fast-pskip
-#no-dct-decimate
-#deadzone-inter=4
-#deadzone-intra=6
-#cqm=/video/etc/cqm/m4g_hrm_v2.cfg"
 
 # defaults
 x264_options="
