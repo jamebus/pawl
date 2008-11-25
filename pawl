@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: hb,v 1.4 2008/11/25 06:48:22 bus Exp bus $
+# $Id: hb,v 1.5 2008/11/25 07:15:11 bus Exp bus $
 #
 
 # Output parameters and exit to avoid recursion when scaffolding
@@ -12,6 +12,7 @@ if [ -n "$scaffolding" ]; then
 	echo "subtitles=\"$subtitles\""
 	echo "quality=\"$quality\""
 	echo "anamorphic=\"$anamorphic\""
+	echo "anamorphic_style=\"$anamorphic_style\""
 	echo "title=\"$title\""
 	echo "chapters=\"$chapters\""
 	echo "x264_filter_options=\"$x264_filter_options\""
@@ -26,7 +27,7 @@ fi
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-hb_config_version='2'
+hb_config_version='3'
 
 # Scaffold
 if [ $0 = '../../etc/hb' ]; then
@@ -40,7 +41,8 @@ if [ $0 = '../../etc/hb' ]; then
 	audio_tracks='1'
 	subtitles=''
 	quality='0.66'
-	anamorphic='No'
+	anamorphic='Yes'
+	anamorphic_style='strict'
 	title='1'
 	chapters='all'
 	x264_filter_options='filter=-2,-1'
@@ -61,6 +63,7 @@ if [ $0 = '../../etc/hb' ]; then
 	       subtitles \
 	       quality \
 	       anamorphic \
+	       anamorphic_style \
 	       title \
 	       chapters \
 	       x264_filter_options \
@@ -104,6 +107,10 @@ quality='$quality'
 
 # Anamorphic video?  [YES/NO/Yes/No/1/0] Default: Yes
 anamorphic='$anamorphic'
+
+# Anamorphic style?  [strict/loose] Default: strict
+# See http://trac.handbrake.fr/wiki/AnamorphicGuide
+anamorphic_style='$anamorphic_style'
 
 # Title to work on.  Default: 1
 title='$title'
@@ -186,7 +193,7 @@ _x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
 _audio_tracks=`echo $audio_tracks | sed 's/[    ]\+/,/g'`
 test "$chapters" = 'all' && chapters=''
 
-# Anamorphic arg
+# Anamorphic?
 case "$anamorphic" in
 	[nN][oO])
 	_anamorphic_arg=''
@@ -197,8 +204,14 @@ case "$anamorphic" in
 	anamorphic='No'
 	;;
 	*)
-	_anamorphic_arg='-p'
 	anamorphic='Yes'
+	if [ -n "$anamorphic_style" -a "$anamorphic_style" = 'loose' ]; then
+		_anamorphic_arg='-P'
+		anamorphic_style='Loose'
+	else
+		_anamorphic_arg='-p'
+		anamorphic_style='Strict'
+	fi
 	;;
 esac
 
@@ -258,7 +271,7 @@ echo "Audio encoder: $audio_encoder"
 echo "Audio tracks: $audio_tracks"
 echo "Subtitles: $subtitles"
 echo "Video quality: $quality"
-echo "Anamorphic video: $anamorphic"
+echo "Anamorphic video: $anamorphic ($anamorphic_style)"
 echo "Video title: $title"
 if [ -n "$chapters" ]; then
 	echo "Video chapters: $chapters"
