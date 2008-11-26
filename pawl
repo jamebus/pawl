@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: hb,v 1.9 2008/11/26 16:41:46 bus Exp bus $
+# $Id: hb,v 1.10 2008/11/26 16:59:20 bus Exp bus $
 #
 
 # Output parameters and exit to avoid recursion when scaffolding
@@ -9,6 +9,7 @@ if [ -n "$scaffolding" ]; then
 	echo "output=\"$output\""
 	echo "audio_tracks=\"$audio_tracks\""
 	echo "audio_encoder=\"$audio_encoder\""
+	echo "audio_bitrate=\"$audio_bitrate\""
 	echo "subtitles=\"$subtitles\""
 	echo "quality=\"$quality\""
 	echo "anamorphic=\"$anamorphic\""
@@ -28,7 +29,7 @@ fi
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-hb_config_version='4'
+hb_config_version='5'
 
 # Scaffold
 if [ $0 = '../../etc/hb' ]; then
@@ -40,6 +41,7 @@ if [ $0 = '../../etc/hb' ]; then
 	output=''
 	audio_tracks='1'
 	audio_encoder='ac3'
+	audio_bitrate='160'
 	subtitles=''
 	quality='0.66'
 	anamorphic='Yes'
@@ -62,6 +64,7 @@ if [ $0 = '../../etc/hb' ]; then
 	       output \
 	       audio_tracks \
 	       audio_encoder \
+	       audio_bitrate \
 	       subtitles \
 	       quality \
 	       anamorphic \
@@ -104,6 +107,13 @@ audio_tracks='$audio_tracks'
 # for some of them, list the encoders you want to use space separated, ordered
 # by the audio tracks you're including.
 audio_encoder='$audio_encoder'
+
+# Audio bitrate.  [int space separated or none] Default: 160
+# If you're including multiple audio tracks and want to use a different bitrate
+# for some of them, list the bitrates you want to use space separated, ordered
+# by the audio tracks you're including.  This parameter is ignored if the track
+# is ac3 passthrough, it is used for faac/lame/vorbis.
+audio_bitrate='$audio_bitrate'
 
 # Subtitles to include.  Default: none
 subtitles='$subtitles'
@@ -197,12 +207,14 @@ psy-rd=1.0:1.0"
 test -z "$title" && title='1'
 test -z "$audio_tracks" && audio_tracks='1'
 test -z "$audio_encoder" && audio_encoder='ac3'
+test -z "$audio_bitrate" && audio_bitrate='160'
 test -z "$quality" && quality='0.66'
 
 # Normalize
 _x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
 _audio_tracks=`echo $audio_tracks | sed 's/[    ]\+/,/g'`
 _audio_encoder=`echo $audio_encoder | sed 's/[    ]\+/,/g'`
+_audio_bitrate=`echo $audio_bitrate | sed 's/[    ]\+/,/g'`
 test "$chapters" = 'all' && chapters=''
 
 # Anamorphic?
@@ -297,6 +309,7 @@ echo "DVD source: $dvd_source"
 echo "Output filename: ${output}.${output_format}"
 echo "Audio tracks: $audio_tracks"
 echo "Audio encoder: $audio_encoder"
+echo "Audio bitrate: $audio_bitrate"
 echo "Subtitles: $subtitles"
 echo "Video quality: $quality"
 echo "Anamorphic video: $anamorphic ($anamorphic_style)"
@@ -376,6 +389,7 @@ HandBrakeCLI	-i "$dvd_source" \
 		-e x264 \
 		"$_anamorphic_arg" \
 		-a "$_audio_tracks" -E "$_audio_encoder" \
+		-B "$_audio_bitrate" \
 		-q "$quality" \
 		"$_chapter_arg" \
 		"$_grayscale_arg" \
