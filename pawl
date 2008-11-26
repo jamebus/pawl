@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: hb,v 1.6 2008/11/25 20:29:01 bus Exp bus $
+# $Id: hb,v 1.7 2008/11/26 15:41:00 bus Exp bus $
 #
 
 # Output parameters and exit to avoid recursion when scaffolding
@@ -268,7 +268,7 @@ fi
 
 # Decombing
 case "$decomb" in
-	[YyEeSs])
+	[yY][eE][sS])
 	_decomb_arg='--decomb'
 	decomb='Yes'
 	;;
