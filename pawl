@@ -1,14 +1,14 @@
 #!/bin/sh
 #
-# $Id: hb,v 1.8 2008/11/26 15:46:28 bus Exp bus $
+# $Id: hb,v 1.9 2008/11/26 16:41:46 bus Exp bus $
 #
 
 # Output parameters and exit to avoid recursion when scaffolding
 if [ -n "$scaffolding" ]; then
 	echo "dvd_source=\"$dvd_source\""
 	echo "output=\"$output\""
-	echo "audio_encoder=\"$audio_encoder\""
 	echo "audio_tracks=\"$audio_tracks\""
+	echo "audio_encoder=\"$audio_encoder\""
 	echo "subtitles=\"$subtitles\""
 	echo "quality=\"$quality\""
 	echo "anamorphic=\"$anamorphic\""
@@ -38,8 +38,8 @@ if [ $0 = '../../etc/hb' ]; then
 	# Defaults
 	dvd_source=''
 	output=''
-	audio_encoder='ac3'
 	audio_tracks='1'
+	audio_encoder='ac3'
 	subtitles=''
 	quality='0.66'
 	anamorphic='Yes'
@@ -60,8 +60,8 @@ if [ $0 = '../../etc/hb' ]; then
 	export scaffolding \
 	       dvd_source \
 	       output \
-	       audio_encoder \
 	       audio_tracks \
+	       audio_encoder \
 	       subtitles \
 	       quality \
 	       anamorphic \
@@ -96,14 +96,14 @@ dvd_source='$dvd_source'
 # Output filename.  Do not include a filename extension.
 output='$output'
 
+# Audio tracks to include.  [int space separated or none] Default: 1
+audio_tracks='$audio_tracks'
+
 # Audio encoder.  [faac/lame/vorbis/ac3] Default: ac3
 # If you're including multiple audio tracks and want to use a different encoder
 # for some of them, list the encoders you want to use space separated, ordered
 # by the audio tracks you're including.
 audio_encoder='$audio_encoder'
-
-# Audio tracks to include.  [int space separated or none] Default: 1
-audio_tracks='$audio_tracks'
 
 # Subtitles to include.  Default: none
 subtitles='$subtitles'
@@ -195,14 +195,14 @@ no-dct-decimate
 psy-rd=1.0:1.0"
 
 test -z "$title" && title='1'
-test -z "$audio_encoder" && audio_encoder='ac3'
 test -z "$audio_tracks" && audio_tracks='1'
+test -z "$audio_encoder" && audio_encoder='ac3'
 test -z "$quality" && quality='0.66'
 
 # Normalize
 _x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
-_audio_encoder=`echo $audio_encoder | sed 's/[    ]\+/,/g'`
 _audio_tracks=`echo $audio_tracks | sed 's/[    ]\+/,/g'`
+_audio_encoder=`echo $audio_encoder | sed 's/[    ]\+/,/g'`
 test "$chapters" = 'all' && chapters=''
 
 # Anamorphic?
@@ -295,8 +295,8 @@ echo
 echo '*******************************************************************************'
 echo "DVD source: $dvd_source"
 echo "Output filename: ${output}.${output_format}"
-echo "Audio encoder: $audio_encoder"
 echo "Audio tracks: $audio_tracks"
+echo "Audio encoder: $audio_encoder"
 echo "Subtitles: $subtitles"
 echo "Video quality: $quality"
 echo "Anamorphic video: $anamorphic ($anamorphic_style)"
@@ -375,7 +375,7 @@ HandBrakeCLI	-i "$dvd_source" \
 		-t "$title" \
 		-e x264 \
 		"$_anamorphic_arg" \
-		-E "$_audio_encoder" -a "$_audio_tracks" \
+		-a "$_audio_tracks" -E "$_audio_encoder" \
 		-q "$quality" \
 		"$_chapter_arg" \
 		"$_grayscale_arg" \
