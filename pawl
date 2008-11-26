@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: hb,v 1.7 2008/11/26 15:41:00 bus Exp bus $
+# $Id: hb,v 1.8 2008/11/26 15:46:28 bus Exp bus $
 #
 
 # Output parameters and exit to avoid recursion when scaffolding
@@ -97,6 +97,9 @@ dvd_source='$dvd_source'
 output='$output'
 
 # Audio encoder.  [faac/lame/vorbis/ac3] Default: ac3
+# If you're including multiple audio tracks and want to use a different encoder
+# for some of them, list the encoders you want to use space separated, ordered
+# by the audio tracks you're including.
 audio_encoder='$audio_encoder'
 
 # Audio tracks to include.  [int space separated or none] Default: 1
@@ -198,6 +201,7 @@ test -z "$quality" && quality='0.66'
 
 # Normalize
 _x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
+_audio_encoder=`echo $audio_encoder | sed 's/[    ]\+/,/g'`
 _audio_tracks=`echo $audio_tracks | sed 's/[    ]\+/,/g'`
 test "$chapters" = 'all' && chapters=''
 
@@ -371,7 +375,7 @@ HandBrakeCLI	-i "$dvd_source" \
 		-t "$title" \
 		-e x264 \
 		"$_anamorphic_arg" \
-		-E "$audio_encoder" -a "$_audio_tracks" \
+		-E "$_audio_encoder" -a "$_audio_tracks" \
 		-q "$quality" \
 		"$_chapter_arg" \
 		"$_grayscale_arg" \
