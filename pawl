@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: hb,v 1.10 2008/11/26 16:59:20 bus Exp bus $
+# $Id: hb,v 1.11 2008/11/26 17:09:15 bus Exp bus $
 #
 
 # Output parameters and exit to avoid recursion when scaffolding
@@ -173,6 +173,15 @@ config_version='$hb_config_version'
 _EOF_
 	echo 'Done.'
 	exit
+fi
+
+# Is config_version newer than what hb supports?
+if [ -n "$config_version" -a $config_version -gt $hb_config_version ]; then
+	set +x
+	echo "This version of hb is too old to support your project's configuration" 1>&2
+	echo "file.  I support version $hb_config_version, your configuration version is $config_version." 1>&2
+	echo "Re-scaffolding your config will fix this, but you may lose features." 1>&2
+	exit 1
 fi
 
 # Ensure input and output files are defined
