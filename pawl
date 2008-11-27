@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: hb,v 1.12 2008/11/27 18:00:59 bus Exp bus $
+# $Id: hb,v 1.13 2008/11/27 18:02:36 bus Exp bus $
 #
 
 # Output parameters and exit to avoid recursion when scaffolding
@@ -352,6 +352,7 @@ if [ $hb_config_version -gt $config_version ]; then
 fi
 
 # handle subtitles
+rm -f subtitles_*
 for _subtitle in $subtitles; do
 	_sid=$(($_subtitle - 1))
 	_track=$((20 + $_sid))
