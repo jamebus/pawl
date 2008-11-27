@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: hb,v 1.11 2008/11/26 17:09:15 bus Exp bus $
+# $Id: hb,v 1.12 2008/11/27 18:00:59 bus Exp bus $
 #
 
 # Output parameters and exit to avoid recursion when scaffolding
@@ -405,18 +405,3 @@ HandBrakeCLI	-i "$dvd_source" \
 		"$_deinterlace_arg" \
 		"$_decomb_arg" \
 		-x "$_x264_options"
-
-#
-# If we're writing an AVI file, build an index so players and play it and
-# mkvmerge can mux it into an MKV container.
-#
-if [ "$output_format" = 'avi' ]; then
-	aviindex -i "${output}.${output_format}" \
-	         -o "${output}.aviindex"
-	avimerge -i "${output}.${output_format}" \
-	         -o "${output}-merged.${output_format}" \
-	         -x "${output}.aviindex"
-	rm -f "${output}.aviindex"
-	mv "${output}-merged.${output_format}" \
-	   "${output}.${output_format}"
-fi
