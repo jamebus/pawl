@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: hb,v 1.14 2008/11/27 18:23:04 bus Exp bus $
+# $Id: hb,v 1.15 2008/11/28 19:19:05 bus Exp bus $
 #
 
 # Output parameters and exit to avoid recursion when scaffolding
@@ -231,6 +231,16 @@ test -z "$audio_tracks" && audio_tracks='1'
 test -z "$audio_encoder" && audio_encoder='ac3'
 test -z "$audio_bitrate" && audio_bitrate='160'
 test -z "$quality" && quality='0.66'
+
+# Scan mode?
+if [ "$1" = 'scan' ]; then
+	HandBrakeCLI -i "$dvd_source" -t 0 -v > handbrake-scan.log 2>&1
+	tcprobe -i "$dvd_source" -H 10 -T "$title" > tcprobe-scan.log 2>&1
+	set +x
+	echo 'HandBrakeCLI scan is in handbrake-scan.log'
+	echo 'tcprobe scan is in tcprobe-scan.log'
+	exit
+fi
 
 # Normalize
 _x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
