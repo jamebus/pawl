@@ -1,101 +1,74 @@
 #!/bin/sh
 #
-# $Id: hb,v 1.16 2008/12/06 20:18:47 bus Exp bus $
+# $Id: pawl,v 1.17 2008/12/12 15:37:49 bus Exp bus $
 #
 
-# Output parameters and exit to avoid recursion when scaffolding
+set -e
+
+# Compatibility hack for legacy configuration files.  It's easier than
+# maintaining the legacy configuration code alongside the new.  Especially
+# since there's only a small number of projects using the old format.
 if [ -n "$scaffolding" ]; then
-	echo "dvd_source=\"$dvd_source\""
-	echo "output=\"$output\""
-	echo "audio_tracks=\"$audio_tracks\""
-	echo "audio_encoder=\"$audio_encoder\""
-	echo "audio_bitrate=\"$audio_bitrate\""
-	echo "subtitles=\"$subtitles\""
-	echo "quality=\"$quality\""
-	echo "anamorphic=\"$anamorphic\""
-	echo "anamorphic_style=\"$anamorphic_style\""
-	echo "title=\"$title\""
-	echo "chapters=\"$chapters\""
-	echo "chapter_markers=\"$chapter_markers\""
-	echo "grayscale=\"$grayscale\""
-	echo "x264_filter_options=\"$x264_filter_options\""
-	echo "x264_nr_options=\"$x264_nr_options\""
-	echo "deinterlace=\"$deinterlace\""
-	echo "deinterlace_params=\"$deinterlace_params\""
-	echo "decomb=\"$decomb\""
-	echo "decomb_params=\"$decomb_params\""
+	sed -i 's,^. ../../etc/hb$,,' config
+	$0 config
 	exit
 fi
 
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='5'
+pawl_config_version='6'
+
+# Defaults
+dvd_source=''
+output=''
+audio_tracks='1'
+audio_encoder='ac3'
+audio_bitrate='160'
+subtitles=''
+quality='0.66'
+anamorphic='Yes'
+anamorphic_style='strict'
+title='1'
+chapters='all'
+chapter_markers='Yes'
+grayscale='No'
+x264_filter_options='filter=-2,-1'
+x264_nr_options='nr=0'
+deinterlace=''
+deinterlace_params=''
+decomb='No'
+decomb_params=''
+
+# Usage
+if [ -z "$1" ]; then
+	echo 'Usage: pawl <option>'
+	echo '       Where option is:'
+	echo
+	echo '       config (Update or create project configuration file)'
+	echo '       run    (run the encoding)'
+	echo '       scan   (scan the DVD structure with HandBrake and tcprobe)'
+	exit
+fi
 
 # Scaffold
-if [ `basename $0` = 'pawl' ]; then
-	scaffolding='1'
-	echo -n 'Scaffolding'
+if [ "$1" = "config" ]; then
+	scaffolding=1
+	echo -n 'Scaffolding configuration file'
 
-	# Defaults
-	dvd_source=''
-	output=''
-	audio_tracks='1'
-	audio_encoder='ac3'
-	audio_bitrate='160'
-	subtitles=''
-	quality='0.66'
-	anamorphic='Yes'
-	anamorphic_style='strict'
-	title='1'
-	chapters='all'
-	chapter_markers='Yes'
-	grayscale='No'
-	x264_filter_options='filter=-2,-1'
-	x264_nr_options='nr=0'
-	deinterlace=''
-	deinterlace_params=''
-	decomb='No'
-	decomb_params=''
+	if [ -r run -a ! -r config ]; then
+		mv run config
+		rm -f run.old
+	fi
 
-	# Make sure these variables are exported to run in order to set
-	# defaults for variables not present and also pass along the
-	# scaffolding variable.
-	export scaffolding \
-	       dvd_source \
-	       output \
-	       audio_tracks \
-	       audio_encoder \
-	       audio_bitrate \
-	       subtitles \
-	       quality \
-	       anamorphic \
-	       anamorphic_style \
-	       title \
-	       chapters \
-	       chapter_markers \
-	       grayscale \
-	       x264_filter_options \
-	       x264_nr_options \
-	       deinterlace \
-	       deinterlace_params \
-	       decomb \
-	       decomb_params
-
-	if [ -r run ]; then
+	if [ -r config ]; then
 		echo ' with existing settings!!!'
-		cp run run.old
-		eval `sh ./run`
+		cp config config.old
+		. ./config
 	else
 		echo ' !!!'
 	fi
-	cat <<_EOF_ > run
-#!/bin/sh
-
-if [ -z "\$scaffolding" ]; then
-	set -ex
-fi
-
+	cat <<_EOF_ > config
 # Source footage.  Needs to be a directory, not a DVD device.
 dvd_source='$dvd_source'
 
@@ -181,11 +154,22 @@ decomb_params='$decomb_params'
 
 # Config version.  Don't mess with this
 config_version='$pawl_config_version'
-
-. \`which pawl\`
 _EOF_
 	echo 'Done.'
 	exit
+fi
+
+set -x
+
+# Read in configuration file
+# Avoid an ugly warning if config_version isn't set.
+config_version=0
+if [ -r config ]; then
+	. ./config
+else
+	set +x
+	echo 'Unable to read configuration file.  Aborting.' 1>&2
+	exit 1
 fi
 
 # Is config_version newer than what pawl supports?
@@ -199,15 +183,17 @@ fi
 
 # Ensure input and output files are defined
 if [ -z "$dvd_source" ]; then
+	set +x
 	echo "ERROR: dvd_source is not defined." 1>&2
 	exit 1
 fi
 if [ -z "$output" ]; then
+	set +x
 	echo "ERROR: output is not defined." 1>&2
 	exit 1
 fi
 
-# defaults
+# x264 defaults
 x264_options="
 $x264_filter_options
 $x264_nr_options
@@ -226,6 +212,7 @@ no-fast-pskip
 no-dct-decimate
 psy-rd=1.0:1.0"
 
+# Re-set some mandatory defaults if the config file blanked them out.
 test -z "$title" && title='1'
 test -z "$audio_tracks" && audio_tracks='1'
 test -z "$audio_encoder" && audio_encoder='ac3'
@@ -240,6 +227,14 @@ if [ "$1" = 'scan' ]; then
 	echo 'HandBrakeCLI scan is in handbrake-scan.log'
 	echo 'tcprobe scan is in tcprobe-scan.log'
 	exit
+fi
+
+# If we're this far, we're running a project.  Make sure the user asked for
+# this.
+if [ "$1" != 'run' ]; then
+	set +x
+	echo 'Unknown option specified.  Aborting.' 1>&2
+	exit 1
 fi
 
 # Normalize
