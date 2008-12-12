@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.17 2008/12/12 15:37:49 bus Exp bus $
+# $Id: pawl,v 1.18 2008/12/12 17:45:24 bus Exp bus $
 #
 
 set -e
@@ -10,7 +10,7 @@ set -e
 # since there's only a small number of projects using the old format.
 if [ -n "$scaffolding" ]; then
 	sed -i 's,^. ../../etc/hb$,,' config
-	$0 config
+	env legacy_scaffold=1 $0 config
 	exit
 fi
 
@@ -54,7 +54,9 @@ fi
 # Scaffold
 if [ "$1" = "config" ]; then
 	scaffolding=1
-	echo -n 'Scaffolding configuration file'
+	if [ -z "$legacy_scaffold" ]; then
+		echo -n 'Scaffolding configuration file'
+	fi
 
 	if [ -r run -a ! -r config ]; then
 		mv run config
@@ -62,7 +64,9 @@ if [ "$1" = "config" ]; then
 	fi
 
 	if [ -r config ]; then
-		echo ' with existing settings!!!'
+		if [ -z "$legacy_scaffold" ]; then
+			echo ' with existing settings!!!'
+		fi
 		cp config config.old
 		. ./config
 	else
