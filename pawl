@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: hb,v 1.15 2008/11/28 19:19:05 bus Exp bus $
+# $Id: hb,v 1.16 2008/12/06 20:18:47 bus Exp bus $
 #
 
 # Output parameters and exit to avoid recursion when scaffolding
@@ -30,10 +30,10 @@ fi
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-hb_config_version='5'
+pawl_config_version='5'
 
 # Scaffold
-if [ $0 = '../../etc/hb' ]; then
+if [ `basename $0` = 'pawl' ]; then
 	scaffolding='1'
 	echo -n 'Scaffolding'
 
@@ -180,19 +180,19 @@ decomb='$decomb'
 decomb_params='$decomb_params'
 
 # Config version.  Don't mess with this
-config_version='$hb_config_version'
+config_version='$pawl_config_version'
 
-. ../../etc/hb
+. \`which pawl\`
 _EOF_
 	echo 'Done.'
 	exit
 fi
 
-# Is config_version newer than what hb supports?
-if [ -n "$config_version" -a $config_version -gt $hb_config_version ]; then
+# Is config_version newer than what pawl supports?
+if [ -n "$config_version" -a $config_version -gt $pawl_config_version ]; then
 	set +x
-	echo "This version of hb is too old to support your project's configuration" 1>&2
-	echo "file.  I support version $hb_config_version, your configuration version is $config_version." 1>&2
+	echo "This version of pawl is too old to support your project's configuration" 1>&2
+	echo "file.  I support version $pawl_config_version, your configuration version is $config_version." 1>&2
 	echo "Re-scaffolding your config will fix this, but you may lose features." 1>&2
 	exit 1
 fi
@@ -389,10 +389,10 @@ set -x
 
 # Should we suggest a config update?
 test -z "$config_version" && config_version=0
-if [ $hb_config_version -gt $config_version ]; then
+if [ $pawl_config_version -gt $config_version ]; then
 	set +x
 	echo '*******************************************************************************'
-	echo "WARNING: hb configuration version is newer than the one you're using,"
+	echo "WARNING: pawl configuration version is newer than the one you're using,"
 	echo "you may want to re-scaffold."
 	echo '*******************************************************************************'
 	set -x
