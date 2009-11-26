@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.20 2009/03/10 03:48:08 bus Exp bus $
+# $Id: pawl,v 1.21 2009/11/26 22:35:00 bus Exp bus $
 #
 
 set -e
@@ -17,7 +17,7 @@ fi
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='7'
+pawl_config_version='8'
 
 # Defaults
 dvd_source=''
@@ -142,8 +142,8 @@ deinterlace='$deinterlace'
 
 # If you're using a deinterlacing filter (set above) you may set it's
 # parameters here.
-# adaptive YM:FD:MM:QP   default: 0:-1:-1:1
-# pullup   L:R:T:B:SB:MP default: 1:1:4:4:0:0
+# adaptive YM:FD:MM:QP (or fast/slow/slower) default: 0:-1:-1:1
+# pullup   L:R:T:B:SB:MP:FD default 1:1:4:4:0:0:-1
 deinterlace_params='$deinterlace_params'
 
 # Selectively deinterlace frames when combing is detected (32detect).
@@ -153,7 +153,8 @@ deinterlace_params='$deinterlace_params'
 decomb='$decomb'
 
 # If you're using decomb (set above) you may set it's parameters here.
-# MO:ME:MT:ST:BT:BX:BY default: 1:2:6:9:80:16:16
+# MO:ME:MT:ST:BT:BX:BY:MG:VA:LA:DI:ER:NO:MD:PP:FD
+# default: 7:2:6:9:80:16:16:10:20:20:4:2:50:24:1:-1
 decomb_params='$decomb_params'
 
 # Config version.  Don't mess with this
