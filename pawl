@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.19 2008/12/12 18:16:49 bus Exp bus $
+# $Id: pawl,v 1.20 2009/03/10 03:48:08 bus Exp bus $
 #
 
 set -e
@@ -17,7 +17,7 @@ fi
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='6'
+pawl_config_version='7'
 
 # Defaults
 dvd_source=''
@@ -82,7 +82,7 @@ output='$output'
 # Audio tracks to include.  [int space separated or none] Default: 1
 audio_tracks='$audio_tracks'
 
-# Audio encoder.  [faac/lame/vorbis/ac3] Default: ac3
+# Audio encoder.  [faac/lame/vorbis/ac3/dts] Default: ac3
 # If you're including multiple audio tracks and want to use a different encoder
 # for some of them, list the encoders you want to use space separated, ordered
 # by the audio tracks you're including.
@@ -246,6 +246,7 @@ _x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
 _audio_tracks=`echo $audio_tracks | sed 's/[    ]\+/,/g'`
 _audio_encoder=`echo $audio_encoder | sed 's/[    ]\+/,/g'`
 _audio_bitrate=`echo $audio_bitrate | sed 's/[    ]\+/,/g'`
+_subtitles=`echo $subtitles | sed 's/[    ]\+/,/g'`
 test "$chapters" = 'all' && chapters=''
 
 # Anamorphic?
@@ -261,16 +262,16 @@ case "$anamorphic" in
 	*)
 	anamorphic='Yes'
 	if [ -n "$anamorphic_style" -a "$anamorphic_style" = 'loose' ]; then
-		_anamorphic_arg='-P'
+		_anamorphic_arg='--loose-anamorphic'
 		anamorphic_style='Loose'
 	else
-		_anamorphic_arg='-p'
+		_anamorphic_arg='--strict-anamorphic'
 		anamorphic_style='Strict'
 	fi
 	;;
 esac
 
-# build args
+# Chapters?
 _chapter_arg=''
 if [ -n "$chapters" ]; then
 	_chapter_arg="-c $chapters"
@@ -288,15 +289,25 @@ case "$chapter_markers" in
 	;;
 	*)
 	chapter_markers='Yes'
-	_chapter_markers_arg='-m'
+	_chapter_markers_arg='--markers='
+	_chapter_markers_filename="`pwd`/chapters.csv"
 	;;
 esac
 
-# Chapter names?
-_chapter_markers_filename=''
-if [ "$chapter_markers" = 'Yes' -a -f 'chapters.csv' ]; then
-	_chapter_markers_arg='--markers='
-	_chapter_markers_filename="`pwd`/chapters.csv"
+# Create chapters.csv if needed.
+if [ "$chapter_markers" = 'Yes' -a ! -f 'chapters.csv' ]; then
+	_number_of_chapters=`tcprobe -i "$dvd_source" -H 10 -T "$title" 2>&1 | grep ' DVD title ' | sed -r 's,.*: ([0-9]+) chapter.*,\1,'`
+	c=1
+	while [ $c -le $_number_of_chapters ]; do
+		echo "$c,Chapter $c" >> chapters.csv
+		c=$(($c+1))
+	done
+fi
+
+# Subtitles?
+_subtitle_arg=''
+if [ -n "$_subtitles" ]; then
+	_subtitle_arg="-s $_subtitles"
 fi
 
 # Grayscale?
@@ -397,47 +408,6 @@ if [ $pawl_config_version -gt $config_version ]; then
 	set -x
 fi
 
-# handle subtitles
-rm -f subtitles_*
-for _subtitle in $subtitles; do
-	_sid=$(($_subtitle - 1))
-	_track=$((20 + $_sid))
-	_track="0x${_track}"
-
-
-	# (dvd_reader.c) subtitle 00=<en> 
-	# (dvd_reader.c) subtitle 01=<es> 
-	# (dvd_reader.c) subtitle 02=<es> 
-	# (dvd_reader.c) subtitle 03=<fr> 
-	_sid_padded=`printf '%02d' $_sid`
-	_lang=`tcprobe -i "$dvd_source" 2>&1 | grep " subtitle ${_sid_padded}=" | sed -r 's,.*=<([^>]+)>[ 	]*,\1,'`
-
-	cp "${dvd_source}/VIDEO_TS/VTS_01_0.IFO" "subtitles_${_sid}.ifo"
-
-	if [ -z "$chapters" ]; then
-		tccat -i "$dvd_source" -T "$title",-1 | \
-		tcextract -x ps1 -t vob -a "$_track" | \
-		subtitle2vobsub	-i "subtitles_${_sid}.ifo" \
-				-o "subtitles_${_sid}"
-	else
-		rm -rf chapters
-		mkdir chapters
-		for _chapter in $chapters; do
-			tccat -i "$dvd_source" \
-			      -T "$title",${_chapter} > chapters/${_chapter}.vob
-		done
-
-		tccat -i chapters | \
-		tcextract -x ps1 -t vob -a "$_track" | \
-		subtitle2vobsub	-i "subtitles_${_sid}.ifo" \
-				-o "subtitles_${_sid}"
-
-		rm -rf chapters
-	fi
-
-	perl -pi -e "s/^id: /id: ${_lang}/" "subtitles_${_sid}.idx"
-done
-
 HandBrakeCLI	-i "$dvd_source" \
 		-f "${output_format}" \
 		-o "${output}.${output_format}" \
@@ -449,11 +419,13 @@ HandBrakeCLI	-i "$dvd_source" \
 		-q "$quality" \
 		"$_chapter_arg" \
 		"${_chapter_markers_arg}${_chapter_markers_filename}" \
+		"$_subtitle_arg" \
 		"$_grayscale_arg" \
 		"$_deinterlace_arg" \
 		"$_decomb_arg" \
 		-x "$_x264_options"
 
+# Handy if you want to repack the mkv later.
 if [ "$chapter_markers" = 'Yes' -a "$output_format" = 'mkv' ]; then
 	mkvextract chapters "${output}.${output_format}" > chapters.xml
 fi
