@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.22 2009/11/26 23:43:54 bus Exp bus $
+# $Id: pawl,v 1.23 2009/11/27 01:10:35 bus Exp bus $
 #
 
 set -e
@@ -213,7 +213,14 @@ partitions=i8x8,p8x8,b8x8
 8x8dct
 me=umh
 no-fast-pskip
-no-dct-decimate"
+no-dct-decimate
+psy-rd=1.0,0.25
+pbratio=1.1
+ipratio=1.1
+aq-strength=0.5
+deadzone-inter=6
+deadzone-intra=6
+qcomp=0.8"
 
 # Re-set some mandatory defaults if the config file blanked them out.
 test -z "$title" && title='1'
