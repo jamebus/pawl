@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.21 2009/11/26 22:35:00 bus Exp bus $
+# $Id: pawl,v 1.22 2009/11/26 23:43:54 bus Exp bus $
 #
 
 set -e
@@ -206,7 +206,6 @@ ref=4
 mixed-refs
 direct=auto
 bframes=3
-b-pyramid
 weightb
 subme=9
 trellis=1
@@ -214,8 +213,7 @@ partitions=i8x8,p8x8,b8x8
 8x8dct
 me=umh
 no-fast-pskip
-no-dct-decimate
-psy-rd=1.0:1.0"
+no-dct-decimate"
 
 # Re-set some mandatory defaults if the config file blanked them out.
 test -z "$title" && title='1'
