@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.23 2009/11/27 01:10:35 bus Exp bus $
+# $Id: pawl,v 1.24 2009/11/27 01:45:55 bus Exp bus $
 #
 
 set -e
@@ -45,9 +45,10 @@ if [ -z "$1" ]; then
 	echo 'Usage: pawl <option>'
 	echo '       Where option is:'
 	echo
-	echo '       config (Update or create project configuration file)'
-	echo '       run    (run the encoding)'
-	echo '       scan   (scan the DVD structure with HandBrake and tcprobe)'
+	echo '       config   (Update or create project configuration file)'
+	echo '       run      (run the encoding)'
+	echo '       scan     (scan the DVD structure with HandBrake and tcprobe)'
+	echo '       32detect (check source for sporadic interlaced frames)'
 	exit
 fi
 
@@ -229,6 +230,14 @@ test -z "$audio_encoder" && audio_encoder='ac3'
 test -z "$audio_bitrate" && audio_bitrate='160'
 test -z "$quality" && quality='0.66'
 
+# Normalize
+_x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
+_audio_tracks=`echo $audio_tracks | sed 's/[    ]\+/,/g'`
+_audio_encoder=`echo $audio_encoder | sed 's/[    ]\+/,/g'`
+_audio_bitrate=`echo $audio_bitrate | sed 's/[    ]\+/,/g'`
+_subtitles=`echo $subtitles | sed 's/[    ]\+/,/g'`
+test "$chapters" = 'all' && chapters=''
+
 # Scan mode?
 if [ "$1" = 'scan' ]; then
 	HandBrakeCLI -i "$dvd_source" -t 0 -v > handbrake-scan.log 2>&1
@@ -239,6 +248,20 @@ if [ "$1" = 'scan' ]; then
 	exit
 fi
 
+# 32detect?
+if [ "$1" = '32detect' ]; then
+	if [ -z "$chapters" ]; then
+		tc_title_chapters_arg="-T ${title},${chapters}"
+	else
+		tc_title_chapters_arg="-T ${title}"
+	fi
+	transcode -J 32detect=force_mode=0:verbose -M 2 -x dvd \
+	          -i "$dvd_source" $tc_title_chapters_arg --progress_off \
+	          -H 10 2>&1 | grep 'interlaced = yes' | \
+	          tee ~/interlaced_frames.log
+	exit
+fi
+
 # If we're this far, we're running a project.  Make sure the user asked for
 # this.
 if [ "$1" != 'run' ]; then
@@ -246,14 +269,6 @@ if [ "$1" != 'run' ]; then
 	echo 'Unknown option specified.  Aborting.' 1>&2
 	exit 1
 fi
-
-# Normalize
-_x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
-_audio_tracks=`echo $audio_tracks | sed 's/[    ]\+/,/g'`
-_audio_encoder=`echo $audio_encoder | sed 's/[    ]\+/,/g'`
-_audio_bitrate=`echo $audio_bitrate | sed 's/[    ]\+/,/g'`
-_subtitles=`echo $subtitles | sed 's/[    ]\+/,/g'`
-test "$chapters" = 'all' && chapters=''
 
 # Anamorphic?
 case "$anamorphic" in
