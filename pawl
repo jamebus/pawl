@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.26 2009/11/28 04:06:46 bus Exp bus $
+# $Id: pawl,v 1.27 2009/11/28 04:12:59 bus Exp bus $
 #
 
 set -e
@@ -17,7 +17,7 @@ fi
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='9'
+pawl_config_version='10'
 
 # Defaults
 dvd_source=''
@@ -27,6 +27,7 @@ audio_encoder='ac3'
 audio_bitrate='160'
 subtitles=''
 quality='0.66'
+crop='auto'
 anamorphic='Yes'
 anamorphic_style='strict'
 title='1'
@@ -99,6 +100,11 @@ subtitles='$subtitles'
 
 # Video quality.  [0.0 - 1.0] Default: 0.66
 quality='$quality'
+
+# Video crop.  [Auto/AUTO/No/NO/None/NONE/Top:Bottom:Left:Right] Default: Auto
+# Adjust video cropping.  Normally auto works fine.  On slight occasion auto
+# can't guess the appropriate values.
+crop='$crop'
 
 # Anamorphic video?  [YES/NO/Yes/No/1/0] Default: Yes
 anamorphic='$anamorphic'
@@ -219,6 +225,7 @@ test -z "$audio_tracks" && audio_tracks='1'
 test -z "$audio_encoder" && audio_encoder='ac3'
 test -z "$audio_bitrate" && audio_bitrate='160'
 test -z "$quality" && quality='0.66'
+test -z "$crop" && crop='auto'
 
 # Normalize
 _x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
@@ -259,6 +266,26 @@ if [ "$1" != 'run' ]; then
 	echo 'Unknown option specified.  Aborting.' 1>&2
 	exit 1
 fi
+
+# Cropping?
+case "$crop" in
+	[nN][oO])
+	_crop_arg='--crop 0:0:0:0'
+	crop='No'
+	;;
+	[nN][oO][nN][eE])
+	_crop_arg='--crop 0:0:0:0'
+	crop='No'
+	;;
+	[aA][uU][tT][oO])
+	_crop_arg=''
+	crop='Yes (Auto)'
+	;;
+	*)
+	_crop_arg="--crop $crop"
+	crop="Yes ($crop)"
+	;;
+esac
 
 # Anamorphic?
 case "$anamorphic" in
@@ -388,6 +415,7 @@ echo "Audio encoder: $audio_encoder"
 echo "Audio bitrate: $audio_bitrate"
 echo "Subtitles: $subtitles"
 echo "Video quality: $quality"
+echo "Video cropping: $crop"
 echo "Anamorphic video: $anamorphic ($anamorphic_style)"
 echo "Video title: $title"
 if [ -n "$chapters" ]; then
@@ -424,6 +452,7 @@ HandBrakeCLI	-i "$dvd_source" \
 		-o "${output}.${output_format}" \
 		-t "$title" \
 		-e x264 \
+		"$_crop_arg" \
 		"$_anamorphic_arg" \
 		-a "$_audio_tracks" -E "$_audio_encoder" \
 		-B "$_audio_bitrate" \
