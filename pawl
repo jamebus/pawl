@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.25 2009/11/27 23:04:39 bus Exp bus $
+# $Id: pawl,v 1.26 2009/11/28 04:06:46 bus Exp bus $
 #
 
 set -e
@@ -240,7 +240,7 @@ fi
 
 # 32detect?
 if [ "$1" = '32detect' ]; then
-	if [ -z "$chapters" ]; then
+	if [ -n "$chapters" ]; then
 		tc_title_chapters_arg="-T ${title},${chapters}"
 	else
 		tc_title_chapters_arg="-T ${title}"
