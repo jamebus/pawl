@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.24 2009/11/27 01:45:55 bus Exp bus $
+# $Id: pawl,v 1.25 2009/11/27 23:04:39 bus Exp bus $
 #
 
 set -e
@@ -17,7 +17,7 @@ fi
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='8'
+pawl_config_version='9'
 
 # Defaults
 dvd_source=''
@@ -33,8 +33,6 @@ title='1'
 chapters='all'
 chapter_markers='Yes'
 grayscale='No'
-x264_filter_options='filter=-2,-1'
-x264_nr_options='nr=0'
 deinterlace=''
 deinterlace_params=''
 decomb='No'
@@ -130,14 +128,6 @@ chapter_markers='$chapter_markers'
 # rainbow shimmering in black and white encodes.
 grayscale='$grayscale'
 
-# x264 filter parameters
-# filter 0,0 for noisy or bad sources and -2,-1 for good sources. 
-x264_filter_options='$x264_filter_options'
-
-# x264 noise reduction parameters
-# Use nr=0 for good sources. Max nr = 150.  If you use more it blocks more.
-x264_nr_options='$x264_nr_options'
-
 # Which deinterlacing filter to use?  [NO/No/adaptive/pullup]
 deinterlace='$deinterlace'
 
@@ -201,8 +191,8 @@ fi
 
 # x264 defaults
 x264_options="
-$x264_filter_options
-$x264_nr_options
+filter=-2,-1
+nr=0
 ref=4
 mixed-refs
 direct=auto
