@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.27 2009/11/28 04:12:59 bus Exp bus $
+# $Id: pawl,v 1.28 2009/11/28 20:17:56 bus Exp bus $
 #
 
 set -e
@@ -270,11 +270,11 @@ fi
 # Cropping?
 case "$crop" in
 	[nN][oO])
-	_crop_arg='--crop 0:0:0:0'
+	_crop_arg="--crop 0:0:0:0"
 	crop='No'
 	;;
 	[nN][oO][nN][eE])
-	_crop_arg='--crop 0:0:0:0'
+	_crop_arg="--crop 0:0:0:0"
 	crop='No'
 	;;
 	[aA][uU][tT][oO])
@@ -452,17 +452,17 @@ HandBrakeCLI	-i "$dvd_source" \
 		-o "${output}.${output_format}" \
 		-t "$title" \
 		-e x264 \
-		"$_crop_arg" \
-		"$_anamorphic_arg" \
+		$_crop_arg \
+		$_anamorphic_arg \
 		-a "$_audio_tracks" -E "$_audio_encoder" \
 		-B "$_audio_bitrate" \
 		-q "$quality" \
-		"$_chapter_arg" \
-		"${_chapter_markers_arg}${_chapter_markers_filename}" \
-		"$_subtitle_arg" \
-		"$_grayscale_arg" \
-		"$_deinterlace_arg" \
-		"$_decomb_arg" \
+		$_chapter_arg \
+		${_chapter_markers_arg}"${_chapter_markers_filename}" \
+		$_subtitle_arg \
+		$_grayscale_arg \
+		$_deinterlace_arg \
+		$_decomb_arg \
 		-x "$_x264_options"
 
 # Handy if you want to repack the mkv later.
