@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.31 2009/11/30 00:42:43 bus Exp bus $
+# $Id: pawl,v 1.32 2009/11/30 06:15:03 bus Exp bus $
 #
 
 set -e
@@ -48,6 +48,7 @@ if [ -z "$1" ]; then
 	echo '       run      (run the encoding)'
 	echo '       scan     (scan the DVD structure with HandBrake and tcprobe)'
 	echo '       32detect (check source for sporadic interlaced frames)'
+	echo '       compare  (compare size of DVD source vs. project output)'
 	exit
 fi
 
@@ -219,6 +220,9 @@ deadzone-inter=6
 deadzone-intra=6
 qcomp=0.8"
 
+# Use mkv container.  It supports everything.
+output_format='mkv'
+
 # Re-set some mandatory defaults if the config file blanked them out.
 test -z "$title" && title='1'
 test -z "$audio_tracks" && audio_tracks='1'
@@ -256,6 +260,23 @@ if [ "$1" = '32detect' ]; then
 	          -i "$dvd_source" $tc_title_chapters_arg --progress_off \
 	          -H 10 2>&1 | grep 'interlaced = yes' | \
 	          tee interlaced_frames.log
+	exit
+fi
+
+# compare?
+if [ "$1" = 'compare' ]; then
+	if [ ! -d "$dvd_source" ]; then
+		set +x
+		echo 'DVD source directory not present.  Aborting.' 1>&2
+		exit 1
+	fi
+	if [ ! -f "${output}.${output_format}" ]; then
+		set +x
+		echo 'Project output file not present.  Aborting.' 1>&2
+		exit 1
+	fi
+	set +x
+	du -sh "$dvd_source" "${output}.${output_format}"
 	exit
 fi
 
@@ -363,9 +384,6 @@ case "$grayscale" in
 	_grayscale_arg=''
 	;;
 esac
-
-# Use mkv by default.  It supports everything.
-output_format='mkv'
 
 # Deinterlacing
 case "$deinterlace" in
