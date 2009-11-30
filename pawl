@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.30 2009/11/29 06:53:58 bus Exp bus $
+# $Id: pawl,v 1.31 2009/11/30 00:42:43 bus Exp bus $
 #
 
 set -e
@@ -270,11 +270,11 @@ fi
 # Cropping?
 case "$crop" in
 	[nN][oO])
-	_crop_arg="--crop 0:0:0:0"
+	_crop_arg="--crop=0:0:0:0"
 	crop='No'
 	;;
 	[nN][oO][nN][eE])
-	_crop_arg="--crop 0:0:0:0"
+	_crop_arg="--crop=0:0:0:0"
 	crop='No'
 	;;
 	[aA][uU][tT][oO])
@@ -282,7 +282,7 @@ case "$crop" in
 	crop='Yes (Auto)'
 	;;
 	*)
-	_crop_arg="--crop $crop"
+	_crop_arg="--crop=${crop}"
 	crop="Yes ($crop)"
 	;;
 esac
@@ -382,7 +382,7 @@ case "$deinterlace" in
 esac
 
 if [ "$deinterlace" != 'No' -a -n "$deinterlace_params" ]; then
-	_deinterlace_arg="$_deinterlace_arg $deinterlace_params"
+	_deinterlace_arg="$_deinterlace_arg=${deinterlace_params}"
 fi
 
 # Decombing
@@ -402,7 +402,7 @@ case "$decomb" in
 esac
 
 if [ "$decomb" != 'No' -a -n "$decomb_params" ]; then
-	_decomb_arg="$_decomb_arg $decomb_params"
+	_decomb_arg="$_decomb_arg=${decomb_params}"
 fi
 
 set +x
