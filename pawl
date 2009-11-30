@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.29 2009/11/29 06:35:51 bus Exp bus $
+# $Id: pawl,v 1.30 2009/11/29 06:53:58 bus Exp bus $
 #
 
 set -e
@@ -255,7 +255,7 @@ if [ "$1" = '32detect' ]; then
 	transcode -J 32detect=force_mode=0:verbose -M 2 -x dvd \
 	          -i "$dvd_source" $tc_title_chapters_arg --progress_off \
 	          -H 10 2>&1 | grep 'interlaced = yes' | \
-	          tee ~/interlaced_frames.log
+	          tee interlaced_frames.log
 	exit
 fi
 
