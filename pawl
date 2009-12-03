@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.32 2009/11/30 06:15:03 bus Exp bus $
+# $Id: pawl,v 1.33 2009/11/30 17:26:53 bus Exp bus $
 #
 
 set -e
@@ -17,7 +17,7 @@ fi
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='11'
+pawl_config_version='12'
 
 # Defaults
 dvd_source=''
@@ -27,6 +27,7 @@ audio_encoder='ac3'
 audio_bitrate='160'
 subtitles=''
 quality='0.68'
+x264_preset='grain'
 crop='auto'
 anamorphic='Yes'
 anamorphic_style='strict'
@@ -101,6 +102,14 @@ subtitles='$subtitles'
 
 # Video quality.  [0.0 - 1.0] Default: 0.68
 quality='$quality'
+
+# x264 preset.  [normal/film/grain/animation] Default: grain
+# Optimize video encoding based on your source material and/or needs.
+# Normal    - x264 high profile defaults.
+# Film      - Optimize for film content.
+# Grain     - Optimize for grainy content (will retain grain/fine details).
+# Animation - Optimize for animated content.
+x264_preset="$x264_preset"
 
 # Video crop.  [Auto/AUTO/No/NO/None/NONE/Top:Bottom:Left:Right] Default: Auto
 # Adjust video cropping.  Normally auto works fine.  On slight occasion auto
@@ -196,11 +205,14 @@ if [ -z "$output" ]; then
 	exit 1
 fi
 
+#
 # x264 defaults
-x264_options="
-filter=-2,-1
+#
+
+# Included in all but normal
+x264_options_preset_standard="
 nr=0
-ref=4
+ref=5
 mixed-refs
 direct=auto
 bframes=3
@@ -211,14 +223,30 @@ partitions=i8x8,p8x8,b8x8
 8x8dct
 me=umh
 no-fast-pskip
-no-dct-decimate
+b-adapt=2
+rc-lookahead=60"
+
+x264_options_preset_grain="
+deblock=-2,-2
 psy-rd=1.0,0.25
-pbratio=1.1
+no-dct-decimate
 ipratio=1.1
+pbratio=1.1
 aq-strength=0.5
-deadzone-inter=6
 deadzone-intra=6
+deadzone-inter=6
 qcomp=0.8"
+
+x264_options_preset_film="
+deblock=-1,-1
+psy-rd=1,0.15"
+
+x264_options_preset_animation="
+ref=10
+deblock=1,1
+psy-rd=0.4,0
+aq-strength=0.6
+bframes=5"
 
 # Use mkv container.  It supports everything.
 output_format='mkv'
@@ -229,10 +257,10 @@ test -z "$audio_tracks" && audio_tracks='1'
 test -z "$audio_encoder" && audio_encoder='ac3'
 test -z "$audio_bitrate" && audio_bitrate='160'
 test -z "$quality" && quality='0.68'
+test -z "$x264_preset" && x264_preset='grain'
 test -z "$crop" && crop='auto'
 
 # Normalize
-_x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
 _audio_tracks=`echo $audio_tracks | sed 's/[    ]\+/,/g'`
 _audio_encoder=`echo $audio_encoder | sed 's/[    ]\+/,/g'`
 _audio_bitrate=`echo $audio_bitrate | sed 's/[    ]\+/,/g'`
@@ -423,6 +451,33 @@ if [ "$decomb" != 'No' -a -n "$decomb_params" ]; then
 	_decomb_arg="$_decomb_arg=${decomb_params}"
 fi
 
+# x264 options
+case "$x264_preset" in
+	[nN][oO][rR][mM][aA][lL])
+	x264_preset='Normal'
+	x264_options=''
+	;;
+	[fF][iI][lL][mM])
+	x264_preset='Film'
+	x264_options="$x264_options_preset_standard $x264_options_preset_film"
+	;;
+	[gG][rR][aA][iI][nN])
+	x264_preset='Grain'
+	x264_options="$x264_options_preset_standard $x264_options_preset_grain"
+	;;
+	[aA][nN][iI][mM][aA][tT][iI][oO][nN])
+	x264_preset='Animation'
+	x264_options="$x264_options_preset_standard $x264_options_preset_animation"
+	;;
+	*)
+	set +x
+	echo "ERROR: Unknown x264_preset, $x264_preset" 1>&2
+	echo 'Aborting!' 1>&2
+	exit 1
+	;;
+esac
+_x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
+
 set +x
 echo
 echo '*******************************************************************************'
@@ -449,6 +504,7 @@ echo "Decomb video: $decomb"
 if [ "$decomb" != 'No' -a -n "$decomb_params" ]; then
 	echo "Decomb params: $decomb_params"
 fi
+echo "x264 preset: $x264_preset"
 echo "x264 options: $_x264_options"
 echo '*******************************************************************************'
 echo
