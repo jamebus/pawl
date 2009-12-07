@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.34 2009/12/03 02:57:24 bus Exp bus $
+# $Id: pawl,v 1.35 2009/12/06 04:18:36 bus Exp bus $
 #
 
 set -e
@@ -45,11 +45,12 @@ if [ -z "$1" ]; then
 	echo 'Usage: pawl <option>'
 	echo '       Where option is:'
 	echo
-	echo '       config   (Update or create project configuration file)'
-	echo '       run      (run the encoding)'
-	echo '       scan     (scan the DVD structure with HandBrake and tcprobe)'
-	echo '       32detect (check source for sporadic interlaced frames)'
-	echo '       compare  (compare size of DVD source vs. project output)'
+	echo '       config       (Update or create project configuration file)'
+	echo '       run          (run the encoding)'
+	echo '       scan         (scan the DVD structure with HandBrake and tcprobe)'
+	echo '       32detect     (check source for sporadic interlaced frames)'
+	echo '       compare      (compare size of DVD source vs. project output)'
+	echo '       extractframe (extract one or more frames.  arg: f1,f2,f3-f4[,f4-f5])'
 	exit
 fi
 
@@ -267,6 +268,12 @@ _audio_bitrate=`echo $audio_bitrate | sed 's/[    ]\+/,/g'`
 _subtitles=`echo $subtitles | sed 's/[    ]\+/,/g'`
 test "$chapters" = 'all' && chapters=''
 
+if [ -n "$chapters" ]; then
+	tc_title_chapters_arg="-T ${title},${chapters}"
+else
+	tc_title_chapters_arg="-T ${title},-1"
+fi
+
 # Scan mode?
 if [ "$1" = 'scan' ]; then
 	HandBrakeCLI -i "$dvd_source" -t 0 -v > handbrake-scan.log 2>&1
@@ -279,15 +286,14 @@ fi
 
 # 32detect?
 if [ "$1" = '32detect' ]; then
-	if [ -n "$chapters" ]; then
-		tc_title_chapters_arg="-T ${title},${chapters}"
-	else
-		tc_title_chapters_arg="-T ${title}"
-	fi
-	transcode -J 32detect=force_mode=0:verbose -M 2 -x dvd \
+	transcode -J 32detect=force_mode=0:verbose -M 0 -x dvd \
 	          -i "$dvd_source" $tc_title_chapters_arg --progress_off \
 	          -H 10 2>&1 | grep 'interlaced = yes' | \
 	          tee interlaced_frames.log
+		  interlaced_frames=`sed -r 's,.*\[([0-9]+)\].*,\1,' interlaced_frames.log | xargs | sed 's/ /,/g'`
+		  if [ -n "$interlaced_frames" ]; then
+			  echo "Interlaced frames: $interlaced_frames"
+		  fi
 	exit
 fi
 
@@ -305,6 +311,43 @@ if [ "$1" = 'compare' ]; then
 	fi
 	set +x
 	du -sh "$dvd_source" "${output}.${output_format}"
+	exit
+fi
+
+# extractframe?
+if [ "$1" = 'extractframe' ]; then
+	if [ -z "$2" ]; then
+		set +x
+		echo 'Missing required argument: frame(s) to extract.  Aborting.' 1>&2
+		exit 1
+	fi
+
+	# Now it gets a little tricky.  transcode's frame selection options
+	# aren't inclusive,  That is -c 97769 won't give you a single frame,
+	# and -c 97769-97770 will give you one frame (97769), not two.  I think
+	# that's a bit unfriendly.  I'm gonna rejigger (that's the technical
+	# erm) things to allow inclusive frame selection and single frame
+	# selection.
+	p=''
+	IFS=','
+	set -- $2
+	while [ $# -gt 0 ]; do
+		s=`echo $1 | awk -F- '{print $1}' | sed -r 's,^0+,,'`
+		e=`echo $1 | awk -F- '{print $2}' | sed -r 's,^0+,,'`
+		if [ -n "$e" ]; then
+			e=$((e+1))
+		else
+			e=$((s+1))
+		fi
+		test -z "$p" || p="${p},"
+		p="${p}${s}-${e}"
+		shift
+	done
+	unset IFS
+
+	transcode -M 0 -x dvd \
+	          -i "$dvd_source" $tc_title_chapters_arg \
+	          -H 10 -c $p -y jpg,null -o frame
 	exit
 fi
 
