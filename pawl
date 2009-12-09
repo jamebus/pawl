@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.36 2009/12/07 04:28:18 bus Exp bus $
+# $Id: pawl,v 1.37 2009/12/09 05:18:12 bus Exp bus $
 #
 
 set -e
@@ -292,6 +292,7 @@ if [ "$1" = '32detect' ]; then
 	          tee interlaced_frames.log
 		interlaced_frames=`sed -r 's,.*\[([0-9]+)\].*,\1,' interlaced_frames.log | xargs | sed 's/ /,/g'`
 		if [ -n "$interlaced_frames" ]; then
+			set +x
 			echo "Interlaced frames: $interlaced_frames"
 		fi
 	exit
