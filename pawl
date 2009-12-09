@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.35 2009/12/06 04:18:36 bus Exp bus $
+# $Id: pawl,v 1.36 2009/12/07 04:28:18 bus Exp bus $
 #
 
 set -e
@@ -290,10 +290,10 @@ if [ "$1" = '32detect' ]; then
 	          -i "$dvd_source" $tc_title_chapters_arg --progress_off \
 	          -H 10 2>&1 | grep 'interlaced = yes' | \
 	          tee interlaced_frames.log
-		  interlaced_frames=`sed -r 's,.*\[([0-9]+)\].*,\1,' interlaced_frames.log | xargs | sed 's/ /,/g'`
-		  if [ -n "$interlaced_frames" ]; then
-			  echo "Interlaced frames: $interlaced_frames"
-		  fi
+		interlaced_frames=`sed -r 's,.*\[([0-9]+)\].*,\1,' interlaced_frames.log | xargs | sed 's/ /,/g'`
+		if [ -n "$interlaced_frames" ]; then
+			echo "Interlaced frames: $interlaced_frames"
+		fi
 	exit
 fi
 
