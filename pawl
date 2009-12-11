@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.37 2009/12/09 05:18:12 bus Exp bus $
+# $Id: pawl,v 1.38 2009/12/09 05:18:59 bus Exp bus $
 #
 
 set -e
@@ -213,7 +213,7 @@ fi
 # Included in all but normal
 x264_options_preset_standard="
 nr=0
-ref=5
+ref=6
 mixed-refs
 direct=auto
 bframes=3
@@ -243,7 +243,7 @@ deblock=-1,-1
 psy-rd=1,0.15"
 
 x264_options_preset_animation="
-ref=10
+ref=12
 deblock=1,1
 psy-rd=0.4,0
 aq-strength=0.6
