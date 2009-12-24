@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.39 2009/12/11 04:50:35 bus Exp bus $
+# $Id: pawl,v 1.40 2009/12/11 08:12:56 bus Exp bus $
 #
 
 set -e
@@ -35,7 +35,7 @@ title='1'
 chapters='all'
 chapter_markers='Yes'
 grayscale='No'
-deinterlace=''
+deinterlace='No'
 deinterlace_params=''
 decomb='No'
 decomb_params=''
