@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.42 2010/06/14 01:42:05 bus Exp bus $
+# $Id: pawl,v 1.43 2010/08/17 01:16:22 bus Exp bus $
 #
 
 set -e
@@ -446,7 +446,7 @@ fi
 # Angle?
 _angle_arg=''
 if [ "$angle" -gt 1 ]; then
-	_angle_arg="--angle $(($angle-1))"
+	_angle_arg="--angle $angle"
 fi
 
 # Subtitles?
