@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.41 2009/12/24 05:27:46 bus Exp bus $
+# $Id: pawl,v 1.42 2010/06/14 01:42:05 bus Exp bus $
 #
 
 set -e
@@ -17,7 +17,7 @@ fi
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='12'
+pawl_config_version='13'
 
 # Defaults
 dvd_source=''
@@ -33,6 +33,7 @@ anamorphic='Yes'
 anamorphic_style='strict'
 title='1'
 chapters='all'
+angle='1'
 chapter_markers='Yes'
 grayscale='No'
 deinterlace='No'
@@ -129,6 +130,9 @@ title='$title'
 
 # Chapters to work on.  Default: all
 chapters='$chapters'
+
+# Angle to work on.  Default: 1
+angle='$angle'
 
 # Include chapter markers?  [YES/NO/Yes/No/1/0] Default: Yes
 # If you want to include chapter names create a file called chapters.csv in
@@ -260,6 +264,7 @@ test -z "$audio_bitrate" && audio_bitrate='160'
 test -z "$quality" && quality='0.68'
 test -z "$x264_preset" && x264_preset='grain'
 test -z "$crop" && crop='auto'
+test -z "$angle" && angle='1'
 
 # Normalize
 _audio_tracks=`echo $audio_tracks | sed 's/[    ]\+/,/g'`
@@ -272,6 +277,9 @@ if [ -n "$chapters" ]; then
 	tc_title_chapters_arg="-T ${title},${chapters}"
 else
 	tc_title_chapters_arg="-T ${title},-1"
+fi
+if [ $angle -gt 1 ]; then
+	tc_title_chapters_arg="${tc_title_chapters_arg},${angle}"
 fi
 
 # Scan mode?
@@ -435,6 +443,12 @@ if [ "$chapter_markers" = 'Yes' -a ! -f 'chapters.csv' ]; then
 	done
 fi
 
+# Angle?
+_angle_arg=''
+if [ "$angle" -gt 1 ]; then
+	_angle_arg="--angle $(($angle-1))"
+fi
+
 # Subtitles?
 _subtitle_arg=''
 if [ -n "$_subtitles" ]; then
@@ -543,6 +557,9 @@ echo "Video title: $title"
 if [ -n "$chapters" ]; then
 	echo "Video chapters: $chapters"
 fi
+if [ $angle -gt 1 ]; then
+	echo "Video angle: $angle"
+fi
 echo "Chapter markers: $chapter_markers"
 echo "Grayscale encoding: $grayscale"
 echo "Deinterlace video: $deinterlace"
@@ -583,6 +600,7 @@ HandBrakeCLI	-i "$dvd_source" \
 		-q "$quality" \
 		$_chapter_arg \
 		${_chapter_markers_arg}"${_chapter_markers_filename}" \
+		${_angle_arg} \
 		$_subtitle_arg \
 		$_grayscale_arg \
 		$_deinterlace_arg \
