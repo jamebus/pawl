@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.44 2010/08/17 03:10:58 bus Exp bus $
+# $Id: pawl,v 1.45 2010/09/25 21:25:14 bus Exp bus $
 #
 
 set -e
@@ -345,7 +345,7 @@ if [ "$1" = 'extractframe' ]; then
 	# aren't inclusive,  That is -c 97769 won't give you a single frame,
 	# and -c 97769-97770 will give you one frame (97769), not two.  I think
 	# that's a bit unfriendly.  I'm gonna rejigger (that's the technical
-	# erm) things to allow inclusive frame selection and single frame
+	# term) things to allow inclusive frame selection and single frame
 	# selection.
 	p=''
 	IFS=','
