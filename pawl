@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.45 2010/09/25 21:25:14 bus Exp bus $
+# $Id: pawl,v 1.46 2010/09/25 21:25:53 bus Exp bus $
 #
 
 set -e
@@ -17,7 +17,7 @@ fi
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='13'
+pawl_config_version='14'
 
 # Defaults
 dvd_source='/dev/dvd'
@@ -26,6 +26,7 @@ audio_tracks='1'
 audio_encoder='ac3'
 audio_bitrate='160'
 subtitles=''
+framerate='same'
 quality='0.68'
 x264_preset='grain'
 crop='auto'
@@ -101,6 +102,9 @@ audio_bitrate='$audio_bitrate'
 
 # Subtitles to include.  Default: none
 subtitles='$subtitles'
+
+# Video framerate.  [same/5/10/12/15/23.976/24/25/29.97] Default: Same as source
+framerate='same'
 
 # Video quality.  [0.0 - 1.0] Default: 0.68
 quality='$quality'
@@ -262,6 +266,7 @@ test -z "$title" && title='1'
 test -z "$audio_tracks" && audio_tracks='1'
 test -z "$audio_encoder" && audio_encoder='ac3'
 test -z "$audio_bitrate" && audio_bitrate='160'
+test -z "$framerate" && framerate='same'
 test -z "$quality" && quality='0.68'
 test -z "$x264_preset" && x264_preset='grain'
 test -z "$crop" && crop='auto'
@@ -453,6 +458,14 @@ if [ "$chapter_markers" = 'Yes' -a ! -f 'chapters.csv' ]; then
 	done
 fi
 
+# Framerate
+_framerate_arg=''
+if [ "$framerate" = 'same' ]; then
+	framerate='Same as source'
+else
+	_framerate_arg="--rate $framerate"
+fi
+
 # Angle?
 _angle_arg=''
 if [ "$angle" -gt 1 ]; then
@@ -560,6 +573,7 @@ echo "Audio tracks: $audio_tracks"
 echo "Audio encoder: $audio_encoder"
 echo "Audio bitrate: $audio_bitrate"
 echo "Subtitles: $subtitles"
+echo "Frame rate: $framerate"
 echo "Video quality: $quality"
 echo "Video cropping: $crop"
 echo "Anamorphic video: $anamorphic ($anamorphic_style)"
@@ -607,6 +621,7 @@ HandBrakeCLI	-i "$dvd_source" \
 		$_anamorphic_arg \
 		-a "$_audio_tracks" -E "$_audio_encoder" \
 		-B "$_audio_bitrate" \
+		$_framerate_arg \
 		-q "$quality" \
 		$_chapter_arg \
 		${_chapter_markers_arg}"${_chapter_markers_filename}" \
