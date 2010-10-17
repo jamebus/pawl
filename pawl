@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.46 2010/09/25 21:25:53 bus Exp bus $
+# $Id: pawl,v 1.47 2010/09/25 21:38:10 bus Exp bus $
 #
 
 set -e
@@ -41,6 +41,18 @@ deinterlace='No'
 deinterlace_params=''
 decomb='No'
 decomb_params=''
+
+# Portability is a good thing™
+
+# sed: How to enable extended regular expressions.
+esed_cmd=''
+# -E ?
+t=`echo '01234 aaaa hi' | sed -E 's,^([0-9]+) .+ (.+)$,\1 \2,' 2>&1` || true
+test "$t" = '01234 hi' && esed_cmd="sed -E"
+# -r ?
+t=`echo '01234 aaaa hi' | sed -r 's,^([0-9]+) .+ (.+)$,\1 \2,' 2>&1` || true
+test "$t" = '01234 hi' && esed_cmd="sed -r"
+test -n "$esed_cmd"
 
 # Usage
 if [ -z "$1" ]; then
@@ -304,7 +316,7 @@ if [ "$1" = '32detect' ]; then
 	          -i "$dvd_source" $tc_title_chapters_arg --progress_off \
 	          -H 10 2>&1 | grep 'interlaced = yes' | \
 	          tee interlaced_frames.log
-		interlaced_frames=`sed -r 's,.*\[([0-9]+)\].*,\1,' interlaced_frames.log | sort -u | xargs | sed 's/ /,/g'`
+		interlaced_frames=`$esed_cmd 's,.*\[([0-9]+)\].*,\1,' interlaced_frames.log | sort -u | xargs | sed 's/ /,/g'`
 		if [ -n "$interlaced_frames" ]; then
 			set +x
 			echo "Interlaced frames: $interlaced_frames"
@@ -356,8 +368,8 @@ if [ "$1" = 'extractframe' ]; then
 	IFS=','
 	set -- $2
 	while [ $# -gt 0 ]; do
-		s=`echo $1 | awk -F- '{print $1}' | sed -r 's,^0+,,'`
-		e=`echo $1 | awk -F- '{print $2}' | sed -r 's,^0+,,'`
+		s=`echo $1 | awk -F- '{print $1}' | $esed_cmd 's,^0+,,'`
+		e=`echo $1 | awk -F- '{print $2}' | $esed_cmd 's,^0+,,'`
 		if [ -n "$e" ]; then
 			e=$((e+1))
 		else
@@ -450,7 +462,7 @@ esac
 
 # Create chapters.csv if needed.
 if [ "$chapter_markers" = 'Yes' -a ! -f 'chapters.csv' ]; then
-	_number_of_chapters=`tcprobe -i "$dvd_source" -H 10 -T "$title" 2>&1 | grep ' DVD title ' | sed -r 's,.*: ([0-9]+) chapter.*,\1,'`
+	_number_of_chapters=`tcprobe -i "$dvd_source" -H 10 -T "$title" 2>&1 | grep ' DVD title ' | $esed_cmd 's,.*: ([0-9]+) chapter.*,\1,'`
 	c=1
 	while [ $c -le $_number_of_chapters ]; do
 		echo "$c,Chapter $c" >> chapters.csv
