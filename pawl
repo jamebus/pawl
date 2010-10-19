@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.47 2010/09/25 21:38:10 bus Exp bus $
+# $Id: pawl,v 1.48 2010/10/17 17:21:17 bus Exp bus $
 #
 
 set -e
@@ -46,13 +46,24 @@ decomb_params=''
 
 # sed: How to enable extended regular expressions.
 esed_cmd=''
+# BSD sed, others?
 # -E ?
 t=`echo '01234 aaaa hi' | sed -E 's,^([0-9]+) .+ (.+)$,\1 \2,' 2>&1` || true
 test "$t" = '01234 hi' && esed_cmd="sed -E"
+# GNU sed, others?
 # -r ?
 t=`echo '01234 aaaa hi' | sed -r 's,^([0-9]+) .+ (.+)$,\1 \2,' 2>&1` || true
 test "$t" = '01234 hi' && esed_cmd="sed -r"
-test -n "$esed_cmd"
+# I don't believe SUNW sed supports extended regular expressions at all.  At
+# least my versions of Solaris do not.  Other systems may be in the same boat
+# as well.  Try GNU sed instead.
+test -z "$esed_cmd" && which gsed >/dev/null 2>&1 && esed_cmd='gsed -r'
+
+if [ -z "$esed_cmd" ]; then
+	echo "ERROR: Your system doesn't have a sed command that supports extended" 1>&2
+	echo "regular expressions.  If this is untrue, please report this as a bug." 1>&2
+	exit 1
+fi
 
 # Usage
 if [ -z "$1" ]; then
