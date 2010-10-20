@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.48 2010/10/17 17:21:17 bus Exp bus $
+# $Id: pawl,v 1.49 2010/10/19 00:36:16 bus Exp bus $
 #
 
 set -e
@@ -49,11 +49,11 @@ esed_cmd=''
 # BSD sed, others?
 # -E ?
 t=`echo '01234 aaaa hi' | sed -E 's,^([0-9]+) .+ (.+)$,\1 \2,' 2>&1` || true
-test "$t" = '01234 hi' && esed_cmd="sed -E"
+test "$t" = '01234 hi' && esed_cmd='sed -E'
 # GNU sed, others?
 # -r ?
 t=`echo '01234 aaaa hi' | sed -r 's,^([0-9]+) .+ (.+)$,\1 \2,' 2>&1` || true
-test "$t" = '01234 hi' && esed_cmd="sed -r"
+test "$t" = '01234 hi' && esed_cmd='sed -r'
 # I don't believe SUNW sed supports extended regular expressions at all.  At
 # least my versions of Solaris do not.  Other systems may be in the same boat
 # as well.  Try GNU sed instead.
