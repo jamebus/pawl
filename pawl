@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.49 2010/10/19 00:36:16 bus Exp bus $
+# $Id: pawl,v 1.50 2010/10/20 18:38:54 bus Exp bus $
 #
 
 set -e
@@ -378,6 +378,7 @@ if [ "$1" = 'extractframe' ]; then
 	p=''
 	IFS=','
 	set -- $2
+	unset IFS
 	while [ $# -gt 0 ]; do
 		s=`echo $1 | awk -F- '{print $1}' | $esed_cmd 's,^0+,,'`
 		e=`echo $1 | awk -F- '{print $2}' | $esed_cmd 's,^0+,,'`
@@ -390,7 +391,6 @@ if [ "$1" = 'extractframe' ]; then
 		p="${p}${s}-${e}"
 		shift
 	done
-	unset IFS
 
 	transcode -M 0 -x dvd \
 	          -i "$dvd_source" $tc_title_chapters_arg \
