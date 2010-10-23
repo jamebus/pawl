@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.50 2010/10/20 18:38:54 bus Exp bus $
+# $Id: pawl,v 1.51 2010/10/21 03:24:47 bus Exp bus $
 #
 
 set -e
@@ -379,6 +379,9 @@ if [ "$1" = 'extractframe' ]; then
 	IFS=','
 	set -- $2
 	unset IFS
+	set +x
+	echo "Building framelist."
+	echo "I won't spam your terminal with this part..."
 	while [ $# -gt 0 ]; do
 		s=`echo $1 | awk -F- '{print $1}' | $esed_cmd 's,^0+,,'`
 		e=`echo $1 | awk -F- '{print $2}' | $esed_cmd 's,^0+,,'`
@@ -391,6 +394,7 @@ if [ "$1" = 'extractframe' ]; then
 		p="${p}${s}-${e}"
 		shift
 	done
+	set -x
 
 	transcode -M 0 -x dvd \
 	          -i "$dvd_source" $tc_title_chapters_arg \
