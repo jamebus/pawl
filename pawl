@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pawl,v 1.51 2010/10/21 03:24:47 bus Exp bus $
+# $Id: pawl,v 1.52 2010/10/23 02:09:19 bus Exp bus $
 #
 
 set -e
@@ -17,7 +17,7 @@ fi
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='14'
+pawl_config_version='15'
 
 # Defaults
 dvd_source='/dev/dvd'
@@ -25,6 +25,7 @@ output=''
 audio_tracks='1'
 audio_encoder='ac3'
 audio_bitrate='160'
+audio_mixdown='dpl2'
 subtitles=''
 framerate='same'
 quality='0.68'
@@ -120,8 +121,15 @@ audio_encoder='$audio_encoder'
 # If you're including multiple audio tracks and want to use a different bitrate
 # for some of them, list the bitrates you want to use space separated, ordered
 # by the audio tracks you're including.  This parameter is ignored if the track
-# is ac3 passthrough, it is used for faac/lame/vorbis.
+# is ac3 or dts passthrough, it is used for faac/lame/vorbis.
 audio_bitrate='$audio_bitrate'
+
+# Audio mixdown.  [mono/stereo/dpl1/dpl2/6ch] Default: dpl2
+# If using a non-passthrough audio format, you may choose your mixdown
+# preference.  It will be sanitized to something appropriate in the event you,
+# for example, choose dpl2 on a stereo track.  This parameter is ignored if the
+# track is ac3 or dts passthrough, it is used for faac/lame/vorbis.
+audio_mixdown='$audio_mixdown'
 
 # Subtitles to include.  Default: none
 subtitles='$subtitles'
@@ -289,6 +297,7 @@ test -z "$title" && title='1'
 test -z "$audio_tracks" && audio_tracks='1'
 test -z "$audio_encoder" && audio_encoder='ac3'
 test -z "$audio_bitrate" && audio_bitrate='160'
+test -z "$audio_mixdown" && audio_mixdown='dpl2'
 test -z "$framerate" && framerate='same'
 test -z "$quality" && quality='0.68'
 test -z "$x264_preset" && x264_preset='grain'
@@ -299,6 +308,7 @@ test -z "$angle" && angle='1'
 _audio_tracks=`echo $audio_tracks | sed 's/[    ]\+/,/g'`
 _audio_encoder=`echo $audio_encoder | sed 's/[    ]\+/,/g'`
 _audio_bitrate=`echo $audio_bitrate | sed 's/[    ]\+/,/g'`
+_audio_mixdown=`echo $audio_mixdown | sed 's/[    ]\+/,/g'`
 _subtitles=`echo $subtitles | sed 's/[    ]\+/,/g'`
 test "$chapters" = 'all' && chapters=''
 
@@ -599,6 +609,7 @@ echo "Output filename: ${output}.${output_format}"
 echo "Audio tracks: $audio_tracks"
 echo "Audio encoder: $audio_encoder"
 echo "Audio bitrate: $audio_bitrate"
+echo "Audio mixdown: $audio_mixdown"
 echo "Subtitles: $subtitles"
 echo "Frame rate: $framerate"
 echo "Video quality: $quality"
@@ -648,6 +659,7 @@ HandBrakeCLI	-i "$dvd_source" \
 		$_anamorphic_arg \
 		-a "$_audio_tracks" -E "$_audio_encoder" \
 		-B "$_audio_bitrate" \
+		--mixdown "$_audio_mixdown" \
 		$_framerate_arg \
 		-q "$quality" \
 		$_chapter_arg \
