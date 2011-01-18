@@ -1,7 +1,4 @@
 #!/bin/sh
-#
-# $Id: pawl,v 1.52 2010/10/23 02:09:19 bus Exp bus $
-#
 
 set -e
 
