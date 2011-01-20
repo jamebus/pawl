@@ -1,0 +1,15 @@
+DESCRIPTION
+
+     pawl is a front-end to HandBrake which may be used to quickly convert
+     your DVD collection into lightweight files.  More specifically
+     H.264/MPEG-4 AVC encoded video, a variety of audio formats (including
+     ac3, dts, and vorbis), in an mkv container.
+
+STORY
+
+     I wrote this for the purpose of near-lossless conversion of my DVD
+     collection so I may keep them in the closet, yet still have films
+     immediately accessible.  I live in a small apartment and did not want
+     to have media piling up everywhere.  Pawl is specifically designed to
+     work with my personal workflow, I feel it could be equally useful to
+     others in a similar situation.
