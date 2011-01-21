@@ -1,7 +1,7 @@
 DESCRIPTION
 
      pawl is a front-end to HandBrake which may be used to quickly convert
-     your DVD collection into lightweight files.  More specifically
+     your DVD collection into lightweight files. More specifically
      H.264/MPEG-4 AVC encoded video, a variety of audio formats (including
      ac3, dts, and vorbis), in an mkv container.
 
@@ -9,7 +9,130 @@ STORY
 
      I wrote this for the purpose of near-lossless conversion of my DVD
      collection so I may keep them in the closet, yet still have films
-     immediately accessible.  I live in a small apartment and did not want
-     to have media piling up everywhere.  Pawl is specifically designed to
+     immediately accessible. I live in a small apartment and did not want
+     to have media piling up everywhere. Pawl is specifically designed to
      work with my personal workflow, I feel it could be equally useful to
      others in a similar situation.
+
+USAGE
+
+     Usage: pawl <option>
+
+     Where option is:
+
+     config       (Update or create project configuration file)
+     run          (run the encoding)
+     scan         (scan the DVD structure with HandBrake and tcprobe)
+     32detect     (check source for sporadic interlaced frames)
+     compare      (compare size of DVD source vs. project output)
+     extractframe (extract one or more frames.  arg: f1,f2,f3-f4[,f4-f5])
+
+REQUIREMENTS
+
+     - HandBrakeCLI
+       At least version 0.9.4, trunk builds will also likely work.
+     
+     - transcode
+       Used for some auxiliary features; 32detect, extractframe, scan,
+       chapter count detection. You may be able to get away without it.
+
+     - A mostly POSIX-compliant Bourne shell. FreeBSD's (and likely all
+       BSDs) Bourne shell works, as does dash. Solaris's doesn't like one
+       of my constructs (likely easily fixed). HP/UX and AIX may be
+       effected by this as well.
+
+     - "Typical" UNIX tools, such as sed(1), du(1), grep(1), rm(1). Unless
+       you have a stripped-down system, you'll likely have everything
+       already.
+
+WORKFLOW
+
+     - Insert DVD or rip DVD.
+
+     - Create directory for the project.
+       mkdir "Some Film" && cd "Some Film"
+
+     - Create config file.
+       pawl config
+
+     - Edit config using a text editor,
+       set dvd_source and output.
+
+     - Scan DVD.
+       pawl scan
+
+     - Using handbrake-scan.log (if it looks fishy, sanity check using
+       tcprobe-scan.log), your favorite player, or powers of technopathy,
+       adjust, at least, title and angle if necessary.
+       
+       Normally the defaults for those are fine. You'll likely want to keep
+       chapters set to all for the next step (unless your end-result will
+       not include all chapters).
+
+     - If the film is not interlaced, check for interlaced frames.
+       Sometimes a few will slip through the DVD mastering shop's
+       algorithms. All the chapters in your chapters setting will be
+       checked. Note: This feature uses a slightly different detection
+       algorithm than HandBrake's decomb feature. Results will be
+       summarized to your terminal and logged to interlaced_frames.log.
+       pawl 32detect
+
+     - If interlaced frames are found, you may extract the frames for
+       visual inspection if you wish. If they're legitimately interlaced,
+       you'll likely want to turn on decomb.
+       pawl extractframe 1,2,3,4,5
+
+     - Choose a chapter to test with. Edit config, change chapters.
+
+     - Start the encode
+       nice pawl run
+
+     - Verify result, adjust config as needed, repeat as desired.
+
+     - Edit chapters.csv if chapter names are desired.
+
+     - Edit config, set chapters to 'all', process the entire film.
+       nice pawl run
+
+     - QA results, repeat last few steps as needed.
+
+     - Verify that the size of the result isn't larger than expected.
+       pawl compare
+
+FUTURE
+
+     - Support Theora.
+
+     - Could use some clean-up.
+
+TIPS
+
+     - Vorbis 160 kb/s is excellent for stereo tracks.
+
+     - Vorbis 80 kb/s is excellent for mono tracks.
+
+     - You can find scene lists for most DVDs at
+       http://video.barnesandnoble.com/.  Save yourself some transcribing
+       effort.
+
+       Use the following VIM-specific regular expressions to convert their
+       scene listings into csv files.  If you use another editor removing
+       the \v may be all you need to adapt it to others.
+
+       %s/\v^[0-9]+\zs\. /,/
+       %s/\v \[[0-9:]+\]$//
+       
+       Don't forget to look for commas that you may need to escape.
+
+     - If the film is hard-interlaced, and deinterlace='adaptive' +
+       deinterlace_params='slower' isn't working well, try
+       deinterlace_params='1:-1:3:1'
+
+       That enables the experimental mcdeint deinterlacer (as opposed to
+       yadif), which tends to work better.
+
+BUGS
+
+     - Likely doesn't work on Solaris.
+
+# vim:tw=75:sw=5:ts=5:et:nojs
