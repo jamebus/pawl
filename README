@@ -112,11 +112,11 @@ TIPS
      - Vorbis 80 kb/s is excellent for mono tracks.
 
      - You can find scene lists for most DVDs at
-       http://video.barnesandnoble.com/.  Save yourself some transcribing
+       http://video.barnesandnoble.com/. Save yourself some transcribing
        effort.
 
        Use the following VIM-specific regular expressions to convert their
-       scene listings into csv files.  If you use another editor removing
+       scene listings into csv files. If you use another editor removing
        the \v may be all you need to adapt it to others.
 
        %s/\v^[0-9]+\zs\. /,/
