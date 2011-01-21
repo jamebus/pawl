@@ -94,6 +94,33 @@ if [ -z "$esed_cmd" ]; then
 	exit 1
 fi
 
+has_tcprobe () {
+	local rc
+	set +e
+	which tcprobe 2>&1 >/dev/null
+	rc=$?
+	set -e
+	return $rc
+}
+
+has_transcode () {
+	local rc
+	set +e
+	which transcode 2>&1 >/dev/null
+	rc=$?
+	set -e
+	return $rc
+}
+
+require_transcode () {
+	if ! has_transcode; then
+		set +x
+		echo "ERROR: transcode is required for this function." 1>&2
+		exit 1
+	fi
+	return 0
+}
+
 # Usage
 if [ -z "$1" ]; then
 	echo 'Usage: pawl <option>'
@@ -352,15 +379,21 @@ fi
 # Scan mode?
 if [ "$1" = 'scan' ]; then
 	HandBrakeCLI -i "$dvd_source" -t 0 -v > handbrake-scan.log 2>&1
-	tcprobe -i "$dvd_source" -H 10 -T "$title" > tcprobe-scan.log 2>&1
+	if has_tcprobe; then
+		tcprobe -i "$dvd_source" \
+		        -H 10 -T "$title" > tcprobe-scan.log 2>&1
+	fi
 	set +x
 	echo 'HandBrakeCLI scan is in handbrake-scan.log'
-	echo 'tcprobe scan is in tcprobe-scan.log'
+	if has_tcprobe; then
+		echo 'tcprobe scan is in tcprobe-scan.log'
+	fi
 	exit
 fi
 
 # 32detect?
 if [ "$1" = '32detect' ]; then
+	require_transcode
 	transcode -J 32detect=force_mode=0:verbose -M 0 -x dvd \
 	          -i "$dvd_source" $tc_title_chapters_arg --progress_off \
 	          -H 10 2>&1 | grep 'interlaced = yes' | \
@@ -406,6 +439,8 @@ if [ "$1" = 'extractframe' ]; then
 		echo 'Missing required argument: frame(s) to extract.  Aborting.' 1>&2
 		exit 1
 	fi
+
+	require_transcode
 
 	# Now it gets a little tricky.  transcode's frame selection options
 	# aren't inclusive,  That is -c 97769 won't give you a single frame,
@@ -515,12 +550,16 @@ esac
 
 # Create chapters.csv if needed.
 if [ "$chapter_markers" = 'Yes' -a ! -f 'chapters.csv' ]; then
-	_number_of_chapters=`tcprobe -i "$dvd_source" -H 10 -T "$title" 2>&1 | grep ' DVD title ' | $esed_cmd 's,.*: ([0-9]+) chapter.*,\1,'`
-	c=1
-	while [ $c -le $_number_of_chapters ]; do
-		echo "$c,Chapter $c" >> chapters.csv
-		c=$(($c+1))
-	done
+	if has_tcprobe; then
+		_number_of_chapters=`tcprobe -i "$dvd_source" -H 10 -T "$title" 2>&1 | grep ' DVD title ' | $esed_cmd 's,.*: ([0-9]+) chapter.*,\1,'`
+		c=1
+		while [ $c -le $_number_of_chapters ]; do
+			echo "$c,Chapter $c" >> chapters.csv
+			c=$(($c+1))
+		done
+	else
+		touch chapters.csv
+	fi
 fi
 
 # Framerate

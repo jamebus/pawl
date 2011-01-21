@@ -32,9 +32,9 @@ REQUIREMENTS
      - HandBrakeCLI
        At least version 0.9.4, trunk builds will also likely work.
      
-     - transcode
+     - transcode (optional)
        Used for some auxiliary features; 32detect, extractframe, scan,
-       chapter count detection. You may be able to get away without it.
+       chapter count detection.
 
      - A mostly POSIX-compliant Bourne shell. FreeBSD's (and likely all
        BSDs) Bourne shell works, as does dash. Solaris's doesn't like one
