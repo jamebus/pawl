@@ -31,7 +31,7 @@ REQUIREMENTS
 
      - HandBrakeCLI
        At least version 0.9.4, trunk builds will also likely work.
-     
+
      - transcode (optional)
        Used for some auxiliary features; 32detect, extractframe, scan,
        chapter count detection.
@@ -64,7 +64,7 @@ WORKFLOW
      - Using handbrake-scan.log (if it looks fishy, sanity check using
        tcprobe-scan.log), your favorite player, or powers of technopathy,
        adjust, at least, title and angle if necessary.
-       
+
        Normally the defaults for those are fine. You'll likely want to keep
        chapters set to all for the next step (unless your end-result will
        not include all chapters).
@@ -121,7 +121,7 @@ TIPS
 
        %s/\v^[0-9]+\zs\. /,/
        %s/\v \[[0-9:]+\]$//
-       
+
        Don't forget to look for commas that you may need to escape.
 
      - If the film is hard-interlaced, and deinterlace='adaptive' +
