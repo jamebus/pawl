@@ -94,6 +94,32 @@ if [ -z "$esed_cmd" ]; then
 	exit 1
 fi
 
+# Make sure we have the appropriate version of HandBrake. Is there a better way
+# to check version? This is a bit silly.
+has_compatible_hb=0
+if `which HandBrakeCLI 2>&1 >/dev/null` ; then
+	hb_cmd_path="`which HandBrakeCLI`"
+	hb_version=`strings "$hb_cmd_path" | \
+	            awk '/^HandBrake [^ ]+$/ {print $2}'`
+	if `echo "$hb_version" | grep '^svn' >/dev/null 2>&1`; then
+		hb_version=`echo "$hb_version" | sed s,^svn,,`
+		if [ $hb_version -ge 3735 ]; then
+			has_compatible_hb=1
+		fi
+		hb_version="svn${hb_version}"
+	elif [ "$hb_version" = '0.9.5' ]; then
+		has_compatible_hb=1
+	fi
+
+	if [ $has_compatible_hb -eq 0 ]; then
+		echo "ERROR: Incompatible HandBrakeCLI, found version ${hb_version}." 1>&2
+		exit 1
+	fi
+else
+	echo 'ERROR: Unable to find HandBrakeCLI. Is it present and in your $PATH?' 1>&2
+	exit 1
+fi
+
 has_tcprobe () {
 	local rc
 	set +e
