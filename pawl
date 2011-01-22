@@ -45,13 +45,13 @@ fi
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='15'
+pawl_config_version='16'
 
 # Defaults
 dvd_source='/dev/dvd'
 output=''
 audio_tracks='1'
-audio_encoder='ac3'
+audio_encoder='copy'
 audio_bitrate='160'
 audio_mixdown='dpl2'
 subtitles=''
@@ -218,10 +218,11 @@ output='$output'
 # Audio tracks to include.  [int space separated or none] Default: 1
 audio_tracks='$audio_tracks'
 
-# Audio encoder.  [faac/lame/vorbis/ac3/dts] Default: ac3
+# Audio encoder.  [faac/lame/vorbis/ac3/copy/copy:ac3/copy:dts] Default: copy
 # If you're including multiple audio tracks and want to use a different encoder
 # for some of them, list the encoders you want to use space separated, ordered
-# by the audio tracks you're including.
+# by the audio tracks you're including. When encoding an ac3 or dts track, you
+# may passthrough the audio track untouched using copy, copy:ac3, or copy:dts.
 audio_encoder='$audio_encoder'
 
 # Audio bitrate.  [int space separated or none] Default: 160
@@ -403,7 +404,7 @@ output_format='mkv'
 test -z "$dvd_source" && dvd_source='/dev/dvd'
 test -z "$title" && title='1'
 test -z "$audio_tracks" && audio_tracks='1'
-test -z "$audio_encoder" && audio_encoder='ac3'
+test -z "$audio_encoder" && audio_encoder='copy'
 test -z "$audio_bitrate" && audio_bitrate='160'
 test -z "$audio_mixdown" && audio_mixdown='dpl2'
 test -z "$framerate" && framerate='same'
