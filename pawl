@@ -147,6 +147,31 @@ require_transcode () {
 	return 0
 }
 
+do_config_migration () {
+	# config_version 16 marks the introduction of HandBrake 0.9.5 which
+	# changes the audio encoding options. In versions prior to HandBrake
+	# 0.9.5, ac3 and dts options yielded passthrough audio encoding. Now
+	# dts doesn't exist, and ac3 gives you ac3 encoding. If your source
+	# audio track is already ac3, you'll re-encode the track and cause,
+	# depending on your settings, a reduction in quality or an increase in
+	# file size. In config_version 15 and below if you your audio encoder
+	# to ac3 or dts, you're expecting passthrough. Let's honor that
+	# intention. As an extra bonus, if you re-scaffold your config, this
+	# adjusted setting will be written to your new config. All this is very
+	# awesomely POLA.
+	if [ $config_version -le 15 ]; then
+		audio_encoder=`echo $audio_encoder | awk '
+		{
+			for (i = 1; i <= NF; i++) {
+				if ($i == "ac3" || $i == "dts") {
+					$i = "copy"
+				}
+			}
+			print $0
+		}'`
+	fi
+}
+
 # Usage
 if [ -z "$1" ]; then
 	echo 'Usage: pawl <option>'
@@ -179,6 +204,7 @@ if [ "$1" = "config" ]; then
 		fi
 		cp config config.old
 		. ./config
+		do_config_migration
 	else
 		echo ' !!!'
 	fi
@@ -299,6 +325,7 @@ set -x
 config_version=0
 if [ -r config ]; then
 	. ./config
+	do_config_migration
 else
 	set +x
 	echo 'Unable to read configuration file.  Aborting.' 1>&2
