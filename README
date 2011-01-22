@@ -31,7 +31,9 @@ REQUIREMENTS
 
      - HandBrakeCLI
        At least version 0.9.4, trunk builds will also likely work.
-       Note: 0.9.5 not tested yet, but will likely work.
+       Update for 0.9.5 is in progress, but it mostly works. Primary
+       problem is documentation problems in config file where audio
+       encoding options have changed.
 
      - transcode (optional)
        Used for some auxiliary features; 32detect, extractframe, scan,
