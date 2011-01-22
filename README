@@ -114,6 +114,9 @@ TIPS
 
      - Vorbis 80 kb/s is excellent for mono tracks.
 
+     - It's best to passthrough ac3 or dts sound sources (unless you don't
+       care about preserving the mix).
+
      - You can find scene lists for most DVDs at
        http://video.barnesandnoble.com/. Save yourself some transcribing
        effort.
