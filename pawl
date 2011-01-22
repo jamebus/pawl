@@ -45,13 +45,13 @@ fi
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='15'
+pawl_config_version='16'
 
 # Defaults
 dvd_source='/dev/dvd'
 output=''
 audio_tracks='1'
-audio_encoder='ac3'
+audio_encoder='copy'
 audio_bitrate='160'
 audio_mixdown='dpl2'
 subtitles=''
@@ -94,6 +94,32 @@ if [ -z "$esed_cmd" ]; then
 	exit 1
 fi
 
+# Make sure we have the appropriate version of HandBrake. Is there a better way
+# to check version? This is a bit silly.
+has_compatible_hb=0
+if `which HandBrakeCLI 2>&1 >/dev/null` ; then
+	hb_cmd_path="`which HandBrakeCLI`"
+	hb_version=`strings "$hb_cmd_path" | \
+	            awk '/^HandBrake [^ ]+$/ {print $2}'`
+	if `echo "$hb_version" | grep '^svn' >/dev/null 2>&1`; then
+		hb_version=`echo "$hb_version" | sed s,^svn,,`
+		if [ $hb_version -ge 3735 ]; then
+			has_compatible_hb=1
+		fi
+		hb_version="svn${hb_version}"
+	elif [ "$hb_version" = '0.9.5' ]; then
+		has_compatible_hb=1
+	fi
+
+	if [ $has_compatible_hb -eq 0 ]; then
+		echo "ERROR: Incompatible HandBrakeCLI, found version ${hb_version}." 1>&2
+		exit 1
+	fi
+else
+	echo 'ERROR: Unable to find HandBrakeCLI. Is it present and in your $PATH?' 1>&2
+	exit 1
+fi
+
 has_tcprobe () {
 	local rc
 	set +e
@@ -119,6 +145,31 @@ require_transcode () {
 		exit 1
 	fi
 	return 0
+}
+
+do_config_migration () {
+	# config_version 16 marks the introduction of HandBrake 0.9.5 which
+	# changes the audio encoding options. In versions prior to HandBrake
+	# 0.9.5, ac3 and dts options yielded passthrough audio encoding. Now
+	# dts doesn't exist, and ac3 gives you ac3 encoding. If your source
+	# audio track is already ac3, you'll re-encode the track and cause,
+	# depending on your settings, a reduction in quality or an increase in
+	# file size. In config_version 15 and below if you your audio encoder
+	# to ac3 or dts, you're expecting passthrough. Let's honor that
+	# intention. As an extra bonus, if you re-scaffold your config, this
+	# adjusted setting will be written to your new config. All this is very
+	# awesomely POLA.
+	if [ $config_version -le 15 ]; then
+		audio_encoder=`echo $audio_encoder | awk '
+		{
+			for (i = 1; i <= NF; i++) {
+				if ($i == "ac3" || $i == "dts") {
+					$i = "copy"
+				}
+			}
+			print $0
+		}'`
+	fi
 }
 
 # Usage
@@ -153,6 +204,7 @@ if [ "$1" = "config" ]; then
 		fi
 		cp config config.old
 		. ./config
+		do_config_migration
 	else
 		echo ' !!!'
 	fi
@@ -166,10 +218,11 @@ output='$output'
 # Audio tracks to include.  [int space separated or none] Default: 1
 audio_tracks='$audio_tracks'
 
-# Audio encoder.  [faac/lame/vorbis/ac3/dts] Default: ac3
+# Audio encoder.  [faac/lame/vorbis/ac3/copy/copy:ac3/copy:dts] Default: copy
 # If you're including multiple audio tracks and want to use a different encoder
 # for some of them, list the encoders you want to use space separated, ordered
-# by the audio tracks you're including.
+# by the audio tracks you're including. When encoding an ac3 or dts track, you
+# may passthrough the audio track untouched using copy, copy:ac3, or copy:dts.
 audio_encoder='$audio_encoder'
 
 # Audio bitrate.  [int space separated or none] Default: 160
@@ -273,6 +326,7 @@ set -x
 config_version=0
 if [ -r config ]; then
 	. ./config
+	do_config_migration
 else
 	set +x
 	echo 'Unable to read configuration file.  Aborting.' 1>&2
@@ -350,7 +404,7 @@ output_format='mkv'
 test -z "$dvd_source" && dvd_source='/dev/dvd'
 test -z "$title" && title='1'
 test -z "$audio_tracks" && audio_tracks='1'
-test -z "$audio_encoder" && audio_encoder='ac3'
+test -z "$audio_encoder" && audio_encoder='copy'
 test -z "$audio_bitrate" && audio_bitrate='160'
 test -z "$audio_mixdown" && audio_mixdown='dpl2'
 test -z "$framerate" && framerate='same'
