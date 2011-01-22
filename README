@@ -123,7 +123,8 @@ TIPS
 
        Use the following VIM-specific regular expressions to convert their
        scene listings into csv files. If you use another editor removing
-       the \v may be all you need to adapt it to others.
+       the \v and adjusting the first one a bit may be all you need to
+       adapt it to others.
 
        %s/\v^[0-9]+\zs\. /,/
        %s/\v \[[0-9:]+\]$//
