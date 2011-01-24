@@ -209,6 +209,10 @@ if [ "$1" = "config" ]; then
 		echo ' !!!'
 	fi
 	cat <<_EOF_ > config
+#
+# pawl project configuration file.
+#
+
 # Source footage.  May be a directory or DVD device node.  Default: /dev/dvd
 dvd_source='$dvd_source'
 
