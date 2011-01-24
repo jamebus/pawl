@@ -213,11 +213,60 @@ if [ "$1" = "config" ]; then
 # pawl project configuration file.
 #
 
+#
+# Source
+#
+
 # Source footage. May be a directory or DVD device node. Default: /dev/dvd
 dvd_source='$dvd_source'
 
+# Title to work on. Default: 1
+title='$title'
+
+# Chapters to work on. Default: all
+chapters='$chapters'
+
+# Angle to work on. Default: 1
+angle='$angle'
+
+#
+# Destination
+#
+
 # Output filename. Do not include a filename extension.
 output='$output'
+
+# Include chapter markers? [YES/NO/Yes/No/1/0] Default: Yes
+# If you want to include chapter names create a file called chapters.csv in
+# your project's directory and populate it with chapter names in the following
+# format:
+# 1,Chapter One
+# 2,Chapter Two
+# 3,Chapter Three
+# If the chapter name contains a comma, escape it with a backslash.
+chapter_markers='$chapter_markers'
+
+#
+# Video encoding
+#
+
+# Video quality. [0.0 - 1.0] Default: 0.68
+quality='$quality'
+
+# x264 preset. [normal/film/grain/animation] Default: grain
+# Optimize video encoding based on your source material and/or needs.
+# Normal    - x264 high profile defaults.
+# Film      - Optimize for film content.
+# Grain     - Optimize for grainy content (will retain grain/fine details).
+# Animation - Optimize for animated content.
+x264_preset="$x264_preset"
+
+# Video framerate. [same/5/10/12/15/23.976/24/25/29.97] Default: Same as source
+framerate='$framerate'
+
+#
+# Audio encoding
+#
 
 # Audio tracks to include. [int space separated or none] Default: 1
 audio_tracks='$audio_tracks'
@@ -243,22 +292,9 @@ audio_bitrate='$audio_bitrate'
 # track is ac3 or dts passthrough, it is used for faac/lame/vorbis.
 audio_mixdown='$audio_mixdown'
 
-# Subtitles to include. Default: none
-subtitles='$subtitles'
-
-# Video framerate. [same/5/10/12/15/23.976/24/25/29.97] Default: Same as source
-framerate='$framerate'
-
-# Video quality. [0.0 - 1.0] Default: 0.68
-quality='$quality'
-
-# x264 preset. [normal/film/grain/animation] Default: grain
-# Optimize video encoding based on your source material and/or needs.
-# Normal    - x264 high profile defaults.
-# Film      - Optimize for film content.
-# Grain     - Optimize for grainy content (will retain grain/fine details).
-# Animation - Optimize for animated content.
-x264_preset="$x264_preset"
+#
+# Picture
+#
 
 # Video crop. [Auto/AUTO/No/NO/None/NONE/Top:Bottom:Left:Right] Default: Auto
 # Adjust video cropping. Normally auto works fine. On slight occasion auto
@@ -272,29 +308,9 @@ anamorphic='$anamorphic'
 # See http://trac.handbrake.fr/wiki/AnamorphicGuide
 anamorphic_style='$anamorphic_style'
 
-# Title to work on. Default: 1
-title='$title'
-
-# Chapters to work on. Default: all
-chapters='$chapters'
-
-# Angle to work on. Default: 1
-angle='$angle'
-
-# Include chapter markers? [YES/NO/Yes/No/1/0] Default: Yes
-# If you want to include chapter names create a file called chapters.csv in
-# your project's directory and populate it with chapter names in the following
-# format:
-# 1,Chapter One
-# 2,Chapter Two
-# 3,Chapter Three
-# If the chapter name contains a comma, escape it with a backslash.
-chapter_markers='$chapter_markers'
-
-# Is your film is black and white? [YES/NO/Yes/No/1/0] Default: No
-# Setting this to Yes if your film is black and white can reduce green tinge or
-# rainbow shimmering in black and white encodes.
-grayscale='$grayscale'
+#
+# Picture filters
+#
 
 # Which deinterlacing filter to use? [NO/No/adaptive/pullup]
 deinterlace='$deinterlace'
@@ -315,6 +331,22 @@ decomb='$decomb'
 # MO:ME:MT:ST:BT:BX:BY:MG:VA:LA:DI:ER:NO:MD:PP:FD
 # default: 7:2:6:9:80:16:16:10:20:20:4:2:50:24:1:-1
 decomb_params='$decomb_params'
+
+# Is your film is black and white? [YES/NO/Yes/No/1/0] Default: No
+# Setting this to Yes if your film is black and white can reduce green tinge or
+# rainbow shimmering in black and white encodes.
+grayscale='$grayscale'
+
+#
+# Subtitle
+#
+
+# Subtitles to include. Default: none
+subtitles='$subtitles'
+
+#
+# Metadata
+#
 
 # Config version. Don't mess with this
 config_version='$pawl_config_version'
