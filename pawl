@@ -247,7 +247,7 @@ audio_mixdown='$audio_mixdown'
 subtitles='$subtitles'
 
 # Video framerate. [same/5/10/12/15/23.976/24/25/29.97] Default: Same as source
-framerate='same'
+framerate='$framerate'
 
 # Video quality. [0.0 - 1.0] Default: 0.68
 quality='$quality'
