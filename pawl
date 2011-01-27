@@ -172,8 +172,9 @@ do_config_migration () {
 	fi
 }
 
-# Usage
-if [ -z "$1" ]; then
+usage () {
+	local rc
+	rc=${1:-0}
 	echo 'Usage: pawl <option>'
 	echo '       Where option is:'
 	echo
@@ -183,8 +184,22 @@ if [ -z "$1" ]; then
 	echo '       32detect     (check source for sporadic interlaced frames)'
 	echo '       compare      (compare size of DVD source vs. project output)'
 	echo '       extractframe (extract one or more frames.  arg: f1,f2,f3-f4[,f4-f5])'
-	exit
-fi
+	exit $rc
+}
+
+test -z "$1"         -o \
+     "$1" = '--help' -o \
+     "$1" = '-h'     -o \
+     "$1" = 'help'   -o \
+     "$1" = 'usage' && usage
+
+# All allowable options MUST be here.
+test "$1" = 'config'       -o \
+     "$1" = 'run'          -o \
+     "$1" = 'scan'         -o \
+     "$1" = '32detect'     -o \
+     "$1" = 'compare'      -o \
+     "$1" = 'extractframe' || usage 1
 
 # Scaffold
 if [ "$1" = "config" ]; then
@@ -565,11 +580,11 @@ if [ "$1" = 'extractframe' ]; then
 	exit
 fi
 
-# If we're this far, we're running a project.  Make sure the user asked for
-# this.
+# Assertion: If we're this far, we're running a project. Make sure the user
+# asked for this.
 if [ "$1" != 'run' ]; then
 	set +x
-	echo 'Unknown option specified.  Aborting.' 1>&2
+	echo 'ASSERT: Fell through option handling logic.' 1>&2
 	exit 1
 fi
 
