@@ -238,7 +238,7 @@ if [ "$1" = "config" ]; then
 		. ./config
 		do_config_migration
 	else
-		echo ' !!!'
+		echo '!!!'
 	fi
 	cat <<_EOF_ > config
 #
