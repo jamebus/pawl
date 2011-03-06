@@ -651,6 +651,8 @@ esac
 _chapter_arg=''
 if [ -n "$chapters" ]; then
 	_chapter_arg="-c $chapters"
+else
+	chapters='All'
 fi
 
 # Chapter markers?
@@ -807,9 +809,7 @@ echo "Video quality: $quality"
 echo "Video cropping: $crop"
 echo "Anamorphic video: $anamorphic ($anamorphic_style)"
 echo "Video title: $title"
-if [ -n "$chapters" ]; then
-	echo "Video chapters: $chapters"
-fi
+echo "Video chapters: $chapters"
 if [ $angle -gt 1 ]; then
 	echo "Video angle: $angle"
 fi
