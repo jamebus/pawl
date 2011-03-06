@@ -41,15 +41,6 @@ if [ "`uname`" = "SunOS" -a "$SHELL" != "/usr/xpg4/bin/sh" ]; then
 	exit $?
 fi
 
-# Compatibility hack for legacy configuration files.  It's easier than
-# maintaining the legacy configuration code alongside the new.  Especially
-# since there's only a small number of projects using the old format.
-if [ -n "$scaffolding" ]; then
-	sed -i 's,^. ../../etc/hb$,,' config
-	env legacy_scaffold=1 $0 config
-	exit
-fi
-
 # This is the version of the configuration file.  Bump this every time there's
 # a change to the default configuration that would justify a configuration
 # regeneration in existing projects.
@@ -220,20 +211,9 @@ test "$1" = 'config'       -o \
 
 # Scaffold
 if [ "$1" = "config" ]; then
-	scaffolding=1
-	if [ -z "$legacy_scaffold" ]; then
-		$echo_n_cmd 'Scaffolding configuration file'
-	fi
-
-	if [ -r run -a ! -r config ]; then
-		mv run config
-		rm -f run.old
-	fi
-
+	$echo_n_cmd 'Scaffolding configuration file'
 	if [ -r config ]; then
-		if [ -z "$legacy_scaffold" ]; then
-			echo ' with existing settings!!!'
-		fi
+		echo ' with existing settings!!!'
 		cp config config.old
 		. ./config
 		do_config_migration
