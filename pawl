@@ -33,6 +33,14 @@
 
 set -e
 
+if [ "`uname`" = "SunOS" -a "$SHELL" != "/usr/xpg4/bin/sh" ]; then
+	SHELL=/usr/xpg4/bin/sh
+	unset ENV
+	export SHELL ENV
+	$SHELL "$0" "$@"
+	exit $?
+fi
+
 # Compatibility hack for legacy configuration files.  It's easier than
 # maintaining the legacy configuration code alongside the new.  Especially
 # since there's only a small number of projects using the old format.
@@ -73,6 +81,15 @@ decomb_params=''
 
 # Portability is a good thing™
 
+# which: Solaris which(1) doesn't return a false error code if the command
+# cannot be found.
+which_cmd='which'
+test "`uname`" = "SunOS" && which_cmd='whence'
+
+# echo: Solaris echo(1) doesn't support the -n argument.
+echo_n_cmd='echo -n'
+test "`uname`" = "SunOS" && echo_n_cmd='/usr/ucb/echo -n'
+
 # sed: How to enable extended regular expressions.
 esed_cmd=''
 # BSD sed, others?
@@ -86,7 +103,7 @@ test "$t" = '01234 hi' && esed_cmd='sed -r'
 # I don't believe SUNW sed supports extended regular expressions at all.  At
 # least my versions of Solaris do not.  Other systems may be in the same boat
 # as well.  Try GNU sed instead.
-test -z "$esed_cmd" && which gsed >/dev/null 2>&1 && esed_cmd='gsed -r'
+test -z "$esed_cmd" && "$which_cmd" gsed >/dev/null 2>&1 && esed_cmd='gsed -r'
 
 if [ -z "$esed_cmd" ]; then
 	echo "ERROR: Your system doesn't have a sed command that supports extended" 1>&2
@@ -97,8 +114,8 @@ fi
 # Make sure we have the appropriate version of HandBrake. Is there a better way
 # to check version? This is a bit silly.
 has_compatible_hb=0
-if `which HandBrakeCLI 2>&1 >/dev/null` ; then
-	hb_cmd_path="`which HandBrakeCLI`"
+if `"$which_cmd" HandBrakeCLI 2>&1 >/dev/null`; then
+	hb_cmd_path="`"$which_cmd" HandBrakeCLI`"
 	hb_version=`strings "$hb_cmd_path" | \
 	            awk '/^HandBrake [^ ]+$/ {print $2}'`
 	if `echo "$hb_version" | grep '^svn' >/dev/null 2>&1`; then
@@ -123,7 +140,7 @@ fi
 has_tcprobe () {
 	local rc
 	set +e
-	which tcprobe 2>&1 >/dev/null
+	"$which_cmd" tcprobe 2>&1 >/dev/null
 	rc=$?
 	set -e
 	return $rc
@@ -132,7 +149,7 @@ has_tcprobe () {
 has_transcode () {
 	local rc
 	set +e
-	which transcode 2>&1 >/dev/null
+	"$which_cmd" transcode 2>&1 >/dev/null
 	rc=$?
 	set -e
 	return $rc
@@ -205,7 +222,7 @@ test "$1" = 'config'       -o \
 if [ "$1" = "config" ]; then
 	scaffolding=1
 	if [ -z "$legacy_scaffold" ]; then
-		echo -n 'Scaffolding configuration file'
+		$echo_n_cmd 'Scaffolding configuration file'
 	fi
 
 	if [ -r run -a ! -r config ]; then
@@ -768,7 +785,7 @@ case "$x264_preset" in
 esac
 _x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
 
-if test -f work.log && which savelog >/dev/null 2>&1; then
+if test -f work.log && "$which_cmd" savelog >/dev/null 2>&1; then
 	savelog work.log
 fi
 
