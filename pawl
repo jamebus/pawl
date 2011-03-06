@@ -702,6 +702,8 @@ fi
 _subtitle_arg=''
 if [ -n "$_subtitles" ]; then
 	_subtitle_arg="-s $_subtitles"
+else
+	subtitles='None'
 fi
 
 # Grayscale?
