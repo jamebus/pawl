@@ -218,6 +218,7 @@ if [ "$1" = "config" ]; then
 		. ./config
 		do_config_migration
 	else
+		output=`pwd | $esed_cmd 's,.*/([^/]+)$,\1,'`
 		echo '!!!'
 	fi
 	cat <<_EOF_ > config
