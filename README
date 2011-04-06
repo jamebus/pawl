@@ -26,6 +26,8 @@ USAGE
      32detect     (check source for sporadic interlaced frames)
      compare      (compare size of DVD source vs. project output)
      extractframe (extract one or more frames.  arg: f1,f2,f3-f4[,f4-f5])
+     playsrc      (Play source)
+     playout      (Play output)
 
 REQUIREMENTS
 
@@ -35,6 +37,9 @@ REQUIREMENTS
      - transcode (optional)
        Used for some auxiliary features; 32detect, extractframe, scan,
        chapter count detection.
+
+     - mplayer (optional)
+       Used for playback features; playsrc, playout.
 
      - A mostly POSIX-compliant Bourne shell. FreeBSD's (and likely all
        BSDs) Bourne shell works, as does dash. Solaris's doesn't like one
