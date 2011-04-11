@@ -33,7 +33,7 @@
 
 set -e
 
-if [ "`uname`" = "SunOS" -a "$SHELL" != "/usr/xpg4/bin/sh" ]; then
+if [ "$(uname)" = "SunOS" -a "$SHELL" != "/usr/xpg4/bin/sh" ]; then
 	SHELL=/usr/xpg4/bin/sh
 	unset ENV
 	export SHELL ENV
@@ -75,21 +75,21 @@ decomb_params=''
 # which: Solaris which(1) doesn't return a false error code if the command
 # cannot be found.
 which_cmd='which'
-test "`uname`" = "SunOS" && which_cmd='whence'
+test "$(uname)" = "SunOS" && which_cmd='whence'
 
 # echo: Solaris echo(1) doesn't support the -n argument.
 echo_n_cmd='echo -n'
-test "`uname`" = "SunOS" && echo_n_cmd='/usr/ucb/echo -n'
+test "$(uname)" = "SunOS" && echo_n_cmd='/usr/ucb/echo -n'
 
 # sed: How to enable extended regular expressions.
 esed_cmd=''
 # BSD sed, others?
 # -E ?
-t=`echo '01234 aaaa hi' | sed -E 's,^([0-9]+) .+ (.+)$,\1 \2,' 2>&1` || true
+t=$(echo '01234 aaaa hi' | sed -E 's,^([0-9]+) .+ (.+)$,\1 \2,' 2>&1) || true
 test "$t" = '01234 hi' && esed_cmd='sed -E'
 # GNU sed, others?
 # -r ?
-t=`echo '01234 aaaa hi' | sed -r 's,^([0-9]+) .+ (.+)$,\1 \2,' 2>&1` || true
+t=$(echo '01234 aaaa hi' | sed -r 's,^([0-9]+) .+ (.+)$,\1 \2,' 2>&1) || true
 test "$t" = '01234 hi' && esed_cmd='sed -r'
 # I don't believe SUNW sed supports extended regular expressions at all.  At
 # least my versions of Solaris do not.  Other systems may be in the same boat
@@ -105,12 +105,12 @@ fi
 # Make sure we have the appropriate version of HandBrake. Is there a better way
 # to check version? This is a bit silly.
 has_compatible_hb=0
-if `"$which_cmd" HandBrakeCLI 2>&1 >/dev/null`; then
-	hb_cmd_path="`"$which_cmd" HandBrakeCLI`"
-	hb_version=`strings "$hb_cmd_path" | \
-	            awk '/^HandBrake [^ ]+$/ {print $2}'`
-	if `echo "$hb_version" | grep '^svn' >/dev/null 2>&1`; then
-		hb_version=`echo "$hb_version" | sed s,^svn,,`
+if $("$which_cmd" HandBrakeCLI 2>&1 >/dev/null); then
+	hb_cmd_path=$("$which_cmd" HandBrakeCLI)
+	hb_version=$(strings "$hb_cmd_path" | \
+	            awk '/^HandBrake [^ ]+$/ {print $2}')
+	if $(echo "$hb_version" | grep '^svn' >/dev/null 2>&1); then
+		hb_version=$(echo "$hb_version" | sed s,^svn,,)
 		if [ $hb_version -ge 3735 ]; then
 			has_compatible_hb=1
 		fi
@@ -159,7 +159,7 @@ do_config_migration () {
 	# adjusted setting will be written to your new config. All this is very
 	# awesomely POLA.
 	if [ $config_version -le 15 ]; then
-		audio_encoder=`echo $audio_encoder | awk '
+		audio_encoder=$(echo $audio_encoder | awk '
 		{
 			for (i = 1; i <= NF; i++) {
 				if ($i == "ac3" || $i == "dts") {
@@ -167,7 +167,7 @@ do_config_migration () {
 				}
 			}
 			print $0
-		}'`
+		}')
 	fi
 }
 
@@ -213,7 +213,7 @@ if [ "$1" = "config" ]; then
 		. ./config
 		do_config_migration
 	else
-		output=`pwd | $esed_cmd 's,.*/([^/]+)$,\1,'`
+		output=$(pwd | $esed_cmd 's,.*/([^/]+)$,\1,')
 		echo '!!!'
 	fi
 	cat <<_EOF_ > config
@@ -458,11 +458,11 @@ test -z "$crop" && crop='auto'
 test -z "$angle" && angle='1'
 
 # Normalize
-_audio_tracks=`echo $audio_tracks | sed 's/[    ]\+/,/g'`
-_audio_encoder=`echo $audio_encoder | sed 's/[    ]\+/,/g'`
-_audio_bitrate=`echo $audio_bitrate | sed 's/[    ]\+/,/g'`
-_audio_mixdown=`echo $audio_mixdown | sed 's/[    ]\+/,/g'`
-_subtitles=`echo $subtitles | sed 's/[    ]\+/,/g'`
+_audio_tracks=$(echo $audio_tracks | sed 's/[    ]\+/,/g')
+_audio_encoder=$(echo $audio_encoder | sed 's/[    ]\+/,/g')
+_audio_bitrate=$(echo $audio_bitrate | sed 's/[    ]\+/,/g')
+_audio_mixdown=$(echo $audio_mixdown | sed 's/[    ]\+/,/g')
+_subtitles=$(echo $subtitles | sed 's/[    ]\+/,/g')
 test "$chapters" = 'all' && chapters=''
 
 if [ -n "$chapters" ]; then
@@ -496,7 +496,7 @@ if [ "$1" = '32detect' ]; then
 	          -i "$dvd_source" $tc_title_chapters_arg --progress_off \
 	          -H 10 2>&1 | grep 'interlaced = yes' | \
 	          tee interlaced_frames.log
-		interlaced_frames=`$esed_cmd 's,.*\[([0-9]+)\].*,\1,' interlaced_frames.log | sort -u | xargs | sed 's/ /,/g'`
+		interlaced_frames=$($esed_cmd 's,.*\[([0-9]+)\].*,\1,' interlaced_frames.log | sort -u | xargs | sed 's/ /,/g')
 		if [ -n "$interlaced_frames" ]; then
 			set +x
 			echo "Interlaced frames: $interlaced_frames"
@@ -508,13 +508,13 @@ fi
 if [ "$1" = 'compare' ]; then
 	dvd_source_dir="$dvd_source"
 	if [ -b "$dvd_source" ]; then
-		dvd_device=`realpath "$dvd_source"`
+		dvd_device=$(realpath "$dvd_source")
 		if ! mount | grep "^${dvd_device} on " >/dev/null 2>&1; then
 			set +x
 			echo 'DVD not present in drive.  Aborting.' 1>&2
 			exit 1
 		fi
-		dvd_source_dir=`mount | grep "^${dvd_device} on " | awk '{print $3}'`
+		dvd_source_dir=$(mount | grep "^${dvd_device} on " | awk '{print $3}')
 	elif [ ! -d "$dvd_source" ]; then
 		set +x
 		echo 'DVD source not present.  Aborting.' 1>&2
@@ -554,8 +554,8 @@ if [ "$1" = 'extractframe' ]; then
 	echo "Building framelist."
 	echo "I won't spam your terminal with this part..."
 	while [ $# -gt 0 ]; do
-		s=`echo $1 | awk -F- '{print $1}' | $esed_cmd 's,^0+,,'`
-		e=`echo $1 | awk -F- '{print $2}' | $esed_cmd 's,^0+,,'`
+		s=$(echo $1 | awk -F- '{print $1}' | $esed_cmd 's,^0+,,')
+		e=$(echo $1 | awk -F- '{print $2}' | $esed_cmd 's,^0+,,')
 		if [ -n "$e" ]; then
 			e=$((e+1))
 		else
@@ -658,14 +658,14 @@ case "$chapter_markers" in
 	*)
 	chapter_markers='Yes'
 	_chapter_markers_arg='--markers='
-	_chapter_markers_filename="`pwd`/chapters.csv"
+	_chapter_markers_filename=$(pwd)/chapters.csv
 	;;
 esac
 
 # Create chapters.csv if needed.
 if [ "$chapter_markers" = 'Yes' -a ! -f 'chapters.csv' ]; then
 	if has_cmd tcprobe; then
-		_number_of_chapters=`tcprobe -i "$dvd_source" -H 10 -T "$title" 2>&1 | grep ' DVD title ' | $esed_cmd 's,.*: ([0-9]+) chapter.*,\1,'`
+		_number_of_chapters=$(tcprobe -i "$dvd_source" -H 10 -T "$title" 2>&1 | grep ' DVD title ' | $esed_cmd 's,.*: ([0-9]+) chapter.*,\1,')
 		c=1
 		while [ $c -le $_number_of_chapters ]; do
 			echo "$c,Chapter $c" >> chapters.csv
@@ -777,7 +777,7 @@ case "$x264_preset" in
 	exit 1
 	;;
 esac
-_x264_options=`echo $x264_options | sed 's/[ 	]\+/:/g'`
+_x264_options=$(echo $x264_options | sed 's/[ 	]\+/:/g')
 
 if test -f work.log && "$which_cmd" savelog >/dev/null 2>&1; then
 	savelog work.log
