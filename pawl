@@ -267,7 +267,7 @@ quality='$quality'
 # Film      - Optimize for film content.
 # Grain     - Optimize for grainy content (will retain grain/fine details).
 # Animation - Optimize for animated content.
-x264_preset="$x264_preset"
+x264_preset='$x264_preset'
 
 # Video framerate. [same/5/10/12/15/23.976/24/25/29.97] Default: Same as source
 framerate='$framerate'
