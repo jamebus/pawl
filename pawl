@@ -178,6 +178,7 @@ usage () {
 	echo '       Where option is:'
 	echo
 	echo '       config       (Update or create project configuration file)'
+	echo '       showconfig   (Show project configuration)'
 	echo '       run          (run the encoding)'
 	echo '       scan         (scan the DVD structure with HandBrake and tcprobe)'
 	echo '       32detect     (check source for sporadic interlaced frames)'
@@ -188,6 +189,37 @@ usage () {
 	exit $rc
 }
 
+print_config_summary () {
+	echo "DVD source: $dvd_source"
+	echo "Output filename: ${output}.${output_format}"
+	echo "Audio tracks: $audio_tracks"
+	echo "Audio encoder: $audio_encoder"
+	echo "Audio bitrate: $audio_bitrate"
+	echo "Audio mixdown: $audio_mixdown"
+	echo "Subtitles: $subtitles"
+	echo "Frame rate: $framerate"
+	echo "Video quality: $quality"
+	echo "Video cropping: $crop"
+	echo "Anamorphic video: $anamorphic ($anamorphic_style)"
+	echo "Video title: $title"
+	echo "Video chapters: $chapters"
+	if [ $angle -gt 1 ]; then
+		echo "Video angle: $angle"
+	fi
+	echo "Chapter markers: $chapter_markers"
+	echo "Grayscale encoding: $grayscale"
+	echo "Deinterlace video: $deinterlace"
+	if [ "$deinterlace" != 'No' -a -n "$deinterlace_params" ]; then
+		echo "Deinterlace params: $deinterlace_params"
+	fi
+	echo "Decomb video: $decomb"
+	if [ "$decomb" != 'No' -a -n "$decomb_params" ]; then
+		echo "Decomb params: $decomb_params"
+	fi
+	echo "x264 preset: $x264_preset"
+	echo "x264 options: $_x264_options"
+}
+
 test -z "$1"         -o \
      "$1" = '--help' -o \
      "$1" = '-h'     -o \
@@ -196,6 +228,7 @@ test -z "$1"         -o \
 
 # All allowable options MUST be here.
 test "$1" = 'config'       -o \
+     "$1" = 'showconfig'   -o \
      "$1" = 'run'          -o \
      "$1" = 'scan'         -o \
      "$1" = '32detect'     -o \
@@ -587,14 +620,6 @@ if [ "$1" = 'playout' ]; then
 	exit $?
 fi
 
-# Assertion: If we're this far, we're running a project. Make sure the user
-# asked for this.
-if [ "$1" != 'run' ]; then
-	set +x
-	echo 'ASSERT: Fell through option handling logic.' 1>&2
-	exit 1
-fi
-
 # Cropping?
 case "$crop" in
 	[nN][oO])
@@ -661,20 +686,6 @@ case "$chapter_markers" in
 	_chapter_markers_filename=$(pwd)/chapters.csv
 	;;
 esac
-
-# Create chapters.csv if needed.
-if [ "$chapter_markers" = 'Yes' -a ! -f 'chapters.csv' ]; then
-	if has_cmd tcprobe; then
-		_number_of_chapters=$(tcprobe -i "$dvd_source" -H 10 -T "$title" 2>&1 | grep ' DVD title ' | $esed_cmd 's,.*: ([0-9]+) chapter.*,\1,')
-		c=1
-		while [ $c -le $_number_of_chapters ]; do
-			echo "$c,Chapter $c" >> chapters.csv
-			c=$(($c+1))
-		done
-	else
-		touch chapters.csv
-	fi
-fi
 
 # Framerate
 _framerate_arg=''
@@ -779,6 +790,35 @@ case "$x264_preset" in
 esac
 _x264_options=$(echo $x264_options | sed 's/[ 	]\+/:/g')
 
+# play output?
+if [ "$1" = 'showconfig' ]; then
+	set +x
+	print_config_summary
+	exit
+fi
+
+# Assertion: If we're this far, we're running a project. Make sure the user
+# asked for this.
+if [ "$1" != 'run' ]; then
+	set +x
+	echo 'ASSERT: Fell through option handling logic.' 1>&2
+	exit 1
+fi
+
+# Create chapters.csv if needed.
+if [ "$chapter_markers" = 'Yes' -a ! -f 'chapters.csv' ]; then
+	if has_cmd tcprobe; then
+		_number_of_chapters=$(tcprobe -i "$dvd_source" -H 10 -T "$title" 2>&1 | grep ' DVD title ' | $esed_cmd 's,.*: ([0-9]+) chapter.*,\1,')
+		c=1
+		while [ $c -le $_number_of_chapters ]; do
+			echo "$c,Chapter $c" >> chapters.csv
+			c=$(($c+1))
+		done
+	else
+		touch chapters.csv
+	fi
+fi
+
 if test -f work.log && "$which_cmd" savelog >/dev/null 2>&1; then
 	savelog work.log
 fi
@@ -787,34 +827,7 @@ set +x
 (
 echo
 echo '*******************************************************************************'
-echo "DVD source: $dvd_source"
-echo "Output filename: ${output}.${output_format}"
-echo "Audio tracks: $audio_tracks"
-echo "Audio encoder: $audio_encoder"
-echo "Audio bitrate: $audio_bitrate"
-echo "Audio mixdown: $audio_mixdown"
-echo "Subtitles: $subtitles"
-echo "Frame rate: $framerate"
-echo "Video quality: $quality"
-echo "Video cropping: $crop"
-echo "Anamorphic video: $anamorphic ($anamorphic_style)"
-echo "Video title: $title"
-echo "Video chapters: $chapters"
-if [ $angle -gt 1 ]; then
-	echo "Video angle: $angle"
-fi
-echo "Chapter markers: $chapter_markers"
-echo "Grayscale encoding: $grayscale"
-echo "Deinterlace video: $deinterlace"
-if [ "$deinterlace" != 'No' -a -n "$deinterlace_params" ]; then
-	echo "Deinterlace params: $deinterlace_params"
-fi
-echo "Decomb video: $decomb"
-if [ "$decomb" != 'No' -a -n "$decomb_params" ]; then
-	echo "Decomb params: $decomb_params"
-fi
-echo "x264 preset: $x264_preset"
-echo "x264 options: $_x264_options"
+print_config_summary
 echo '*******************************************************************************'
 echo
 ) | tee work.log
