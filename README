@@ -21,6 +21,7 @@ USAGE
      Where option is:
 
      config       (Update or create project configuration file)
+     showconfig   (Show project configuration)
      run          (run the encoding)
      scan         (scan the DVD structure with HandBrake and tcprobe)
      32detect     (check source for sporadic interlaced frames)
