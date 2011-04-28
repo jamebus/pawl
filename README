@@ -32,6 +32,15 @@ USAGE
 
 REQUIREMENTS
 
+     - A mostly POSIX-compliant Bourne shell. FreeBSD's (and likely all
+       BSDs) Bourne shell works, as does dash. Solaris's doesn't like one
+       of my constructs (likely easily fixed). HP/UX and AIX may be
+       effected by this as well.
+
+     - "Typical" UNIX tools, such as sed(1), du(1), grep(1), rm(1). Unless
+       you have a stripped-down system, you'll likely have everything
+       already.
+
      - HandBrakeCLI
        At least version 0.9.5, trunk builds >= r3735 will also likely work.
 
@@ -41,15 +50,6 @@ REQUIREMENTS
 
      - mplayer (optional)
        Used for playback features; playsrc, playout.
-
-     - A mostly POSIX-compliant Bourne shell. FreeBSD's (and likely all
-       BSDs) Bourne shell works, as does dash. Solaris's doesn't like one
-       of my constructs (likely easily fixed). HP/UX and AIX may be
-       effected by this as well.
-
-     - "Typical" UNIX tools, such as sed(1), du(1), grep(1), rm(1). Unless
-       you have a stripped-down system, you'll likely have everything
-       already.
 
 WORKFLOW
 
