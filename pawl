@@ -105,11 +105,11 @@ fi
 # Make sure we have the appropriate version of HandBrake. Is there a better way
 # to check version? This is a bit silly.
 has_compatible_hb=0
-if $("$which_cmd" HandBrakeCLI 2>&1 >/dev/null); then
+if "$which_cmd" HandBrakeCLI 2>&1 >/dev/null; then
 	hb_cmd_path=$("$which_cmd" HandBrakeCLI)
 	hb_version=$(strings "$hb_cmd_path" | \
 	            awk '/^HandBrake [^ ]+$/ {print $2}')
-	if $(echo "$hb_version" | grep '^svn' >/dev/null 2>&1); then
+	if echo "$hb_version" | grep '^svn' >/dev/null 2>&1; then
 		hb_version=$(echo "$hb_version" | sed s,^svn,,)
 		if [ $hb_version -ge 3735 ]; then
 			has_compatible_hb=1
