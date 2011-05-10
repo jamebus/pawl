@@ -500,8 +500,14 @@ test "$chapters" = 'all' && chapters=''
 
 if [ -n "$chapters" ]; then
 	tc_title_chapters_arg="-T ${title},${chapters}"
+	if echo "$chapters" | grep '-' >/dev/null; then
+		mplayer_chapters_arg="-chapter $chapters"
+	else
+		mplayer_chapters_arg="-chapter ${chapters}-${chapters}"
+	fi
 else
 	tc_title_chapters_arg="-T ${title},-1"
+	mplayer_chapters_arg=''
 fi
 if [ $angle -gt 1 ]; then
 	tc_title_chapters_arg="${tc_title_chapters_arg},${angle}"
@@ -609,7 +615,7 @@ fi
 # play source?
 if [ "$1" = 'playsrc' ]; then
 	require_cmd mplayer
-	mplayer -dvd-device "$dvd_source" dvd://"${title}"
+	mplayer -dvd-device "$dvd_source" $mplayer_chapters_arg dvd://"${title}"
 	exit $?
 fi
 
