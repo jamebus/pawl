@@ -531,8 +531,14 @@ fi
 # 32detect?
 if [ "$1" = '32detect' ]; then
 	require_cmd transcode
+	tc_progress_off_arg=''
+	if transcode --help 2>&1 | grep ' --progress_meter ' >/dev/null; then
+		tc_progress_off_arg='--progress_meter 0'
+	elif transcode --help 2>&1 | grep ' --progress_off ' >/dev/null; then
+		tc_progress_off_arg='--progress_off'
+	fi
 	transcode -J 32detect=force_mode=0:verbose -M 0 -x dvd \
-	          -i "$dvd_source" $tc_title_chapters_arg --progress_off \
+	          -i "$dvd_source" $tc_title_chapters_arg $tc_progress_off_arg \
 	          -H 10 2>&1 | grep 'interlaced = yes' | \
 	          tee interlaced_frames.log
 		interlaced_frames=$($esed_cmd 's,.*\[([0-9]+)\].*,\1,' interlaced_frames.log | sort -u | xargs | sed 's/ /,/g')
