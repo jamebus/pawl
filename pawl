@@ -739,10 +739,10 @@ esac
 
 # Deinterlacing
 case "$deinterlace" in
-	adaptive)
+	[aA][dD][aA][pP][tT][iI][vV][eE])
 	_deinterlace_arg='--deinterlace'
 	;;
-	pullup)
+	[pP][uU][lL][lL][uU][pP])
 	_deinterlace_arg='--detelecine'
 	;;
 	*)
