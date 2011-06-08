@@ -478,17 +478,17 @@ bframes=5"
 output_format='mkv'
 
 # Re-set some mandatory defaults if the config file blanked them out.
-test -z "$dvd_source" && dvd_source='/dev/dvd'
-test -z "$title" && title='1'
-test -z "$audio_tracks" && audio_tracks='1'
-test -z "$audio_encoder" && audio_encoder='copy'
-test -z "$audio_bitrate" && audio_bitrate='160'
-test -z "$audio_mixdown" && audio_mixdown='dpl2'
-test -z "$framerate" && framerate='same'
-test -z "$quality" && quality='0.68'
-test -z "$x264_preset" && x264_preset='grain'
-test -z "$crop" && crop='auto'
-test -z "$angle" && angle='1'
+: ${dvd_source:='/dev/dvd'}
+: ${title:='1'}
+: ${audio_tracks:='1'}
+: ${audio_encoder:='copy'}
+: ${audio_bitrate:='160'}
+: ${audio_mixdown:='dpl2'}
+: ${framerate:='same'}
+: ${quality:='0.68'}
+: ${x264_preset:='grain'}
+: ${crop:='auto'}
+: ${angle:='1'}
 
 # Normalize
 _audio_tracks=$(echo $audio_tracks | sed 's/[    ]\+/,/g')
@@ -846,7 +846,7 @@ echo
 set -x
 
 # Should we suggest a config update?
-test -z "$config_version" && config_version=0
+: ${config_version:=0}
 if [ $pawl_config_version -gt $config_version ]; then
 	set +x
 	echo '*******************************************************************************'
