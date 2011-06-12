@@ -105,7 +105,7 @@ fi
 # Make sure we have the appropriate version of HandBrake. Is there a better way
 # to check version? This is a bit silly.
 has_compatible_hb=0
-if "$which_cmd" HandBrakeCLI 2>&1 >/dev/null; then
+if "$which_cmd" HandBrakeCLI >/dev/null 2>&1; then
 	hb_cmd_path=$("$which_cmd" HandBrakeCLI)
 	hb_version=$(strings "$hb_cmd_path" | \
 	            awk '/^HandBrake [^ ]+$/ {print $2}')
@@ -131,7 +131,7 @@ fi
 has_cmd () {
 	local rc
 	set +e
-	"$which_cmd" "$1" 2>&1 >/dev/null
+	"$which_cmd" "$1" >/dev/null 2>&1
 	rc=$?
 	set -e
 	return $rc
