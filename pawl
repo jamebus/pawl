@@ -551,7 +551,7 @@ fi
 
 # compare?
 if [ "$1" = 'compare' ]; then
-	dvd_source_dir="$dvd_source"
+	_dvd_source="$dvd_source"
 	if [ -b "$dvd_source" ]; then
 		dvd_device=$(realpath "$dvd_source")
 		if ! mount | grep "^${dvd_device} on " >/dev/null 2>&1; then
@@ -559,8 +559,8 @@ if [ "$1" = 'compare' ]; then
 			echo 'DVD not present in drive.  Aborting.' 1>&2
 			exit 1
 		fi
-		dvd_source_dir=$(mount | grep "^${dvd_device} on " | awk '{print $3}')
-	elif [ ! -d "$dvd_source" ]; then
+		_dvd_source=$(mount | grep "^${dvd_device} on " | awk '{print $3}')
+	elif [ ! -e "$dvd_source" ]; then
 		set +x
 		echo 'DVD source not present.  Aborting.' 1>&2
 		exit 1
@@ -571,7 +571,7 @@ if [ "$1" = 'compare' ]; then
 		exit 1
 	fi
 	set +x
-	du -sh "$dvd_source_dir" "${output}.${output_format}"
+	du -sh "$_dvd_source" "${output}.${output_format}"
 	exit
 fi
 
