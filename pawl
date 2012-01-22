@@ -41,8 +41,8 @@ if [ "$(uname)" = "SunOS" -a "$SHELL" != "/usr/xpg4/bin/sh" ]; then
 	exit $?
 fi
 
-# This is the version of the configuration file.  Bump this every time there's
-# a change to the default configuration that would justify a configuration
+# This is the version of the configuration file. Bump this every time there's a
+# change to the default configuration that would justify a configuration
 # regeneration in existing projects.
 pawl_config_version='16'
 
@@ -91,14 +91,14 @@ test "$t" = '01234 hi' && esed_cmd='sed -E'
 # -r ?
 t=$(echo '01234 aaaa hi' | sed -r 's,^([0-9]+) .+ (.+)$,\1 \2,' 2>&1) || true
 test "$t" = '01234 hi' && esed_cmd='sed -r'
-# I don't believe SUNW sed supports extended regular expressions at all.  At
-# least my versions of Solaris do not.  Other systems may be in the same boat
-# as well.  Try GNU sed instead.
+# I don't believe SUNW sed supports extended regular expressions at all. At
+# least my versions of Solaris do not. Other systems may be in the same boat as
+# well. Try GNU sed instead.
 test -z "$esed_cmd" && "$which_cmd" gsed >/dev/null 2>&1 && esed_cmd='gsed -r'
 
 if [ -z "$esed_cmd" ]; then
 	echo "ERROR: Your system doesn't have a sed command that supports extended" 1>&2
-	echo "regular expressions.  If this is untrue, please report this as a bug." 1>&2
+	echo "regular expressions. If this is untrue, please report this as a bug." 1>&2
 	exit 1
 fi
 
@@ -183,7 +183,7 @@ usage () {
 	echo '       scan         (scan the DVD structure with HandBrake and tcprobe)'
 	echo '       32detect     (check source for sporadic interlaced frames)'
 	echo '       compare      (compare size of DVD source vs. project output)'
-	echo '       extractframe (extract one or more frames.  arg: f1,f2,f3-f4[,f4-f5])'
+	echo '       extractframe (extract one or more frames. arg: f1,f2,f3-f4[,f4-f5])'
 	echo '       playsrc      (Play source)'
 	echo '       playout      (Play output)'
 	exit $rc
@@ -406,7 +406,7 @@ if [ -r config ]; then
 	do_config_migration
 else
 	set +x
-	echo 'Unable to read configuration file.  Aborting.' 1>&2
+	echo 'Unable to read configuration file. Aborting.' 1>&2
 	exit 1
 fi
 
@@ -414,7 +414,7 @@ fi
 if [ -n "$config_version" -a $config_version -gt $pawl_config_version ]; then
 	set +x
 	echo "This version of pawl is too old to support your project's configuration" 1>&2
-	echo "file.  I support version $pawl_config_version, your configuration version is $config_version." 1>&2
+	echo "file. I support version $pawl_config_version, your configuration version is $config_version." 1>&2
 	echo "Re-scaffolding your config will fix this, but you may lose features." 1>&2
 	exit 1
 fi
@@ -474,7 +474,7 @@ psy-rd=0.4,0
 aq-strength=0.6
 bframes=5"
 
-# Use mkv container.  It supports everything.
+# Use mkv container. It supports everything.
 output_format='mkv'
 
 # Re-set some mandatory defaults if the config file blanked them out.
@@ -556,18 +556,18 @@ if [ "$1" = 'compare' ]; then
 		dvd_device=$(realpath "$dvd_source")
 		if ! mount | grep "^${dvd_device} on " >/dev/null 2>&1; then
 			set +x
-			echo 'DVD not present in drive.  Aborting.' 1>&2
+			echo 'DVD not present in drive. Aborting.' 1>&2
 			exit 1
 		fi
 		_dvd_source=$(mount | grep "^${dvd_device} on " | awk '{print $3}')
 	elif [ ! -e "$dvd_source" ]; then
 		set +x
-		echo 'DVD source not present.  Aborting.' 1>&2
+		echo 'DVD source not present. Aborting.' 1>&2
 		exit 1
 	fi
 	if [ ! -f "${output}.${output_format}" ]; then
 		set +x
-		echo 'Project output file not present.  Aborting.' 1>&2
+		echo 'Project output file not present. Aborting.' 1>&2
 		exit 1
 	fi
 	set +x
@@ -579,16 +579,16 @@ fi
 if [ "$1" = 'extractframe' ]; then
 	if [ -z "$2" ]; then
 		set +x
-		echo 'Missing required argument: frame(s) to extract.  Aborting.' 1>&2
+		echo 'Missing required argument: frame(s) to extract. Aborting.' 1>&2
 		exit 1
 	fi
 
 	require_cmd transcode
 
-	# Now it gets a little tricky.  transcode's frame selection options
-	# aren't inclusive,  That is -c 97769 won't give you a single frame,
-	# and -c 97769-97770 will give you one frame (97769), not two.  I think
-	# that's a bit unfriendly.  I'm gonna rejigger (that's the technical
+	# Now it gets a little tricky. transcode's frame selection options
+	# aren't inclusive. That is -c 97769 won't give you a single frame, and
+	# -c 97769-97770 will give you one frame (97769), not two. I think
+	# that's a bit unfriendly. I'm gonna rejigger (that's the technical
 	# term) things to allow inclusive frame selection and single frame
 	# selection.
 	p=''
