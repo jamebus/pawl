@@ -31,7 +31,7 @@
 # policies, either expressed or implied, of James Kelly.
 #
 
-set -e
+set -eu
 
 if [ "$(uname)" = "SunOS" -a "$SHELL" != "/usr/xpg4/bin/sh" ]; then
 	SHELL=/usr/xpg4/bin/sh
@@ -94,9 +94,9 @@ test "$t" = '01234 hi' && esed_cmd='sed -r'
 # I don't believe SUNW sed supports extended regular expressions at all. At
 # least my versions of Solaris do not. Other systems may be in the same boat as
 # well. Try GNU sed instead.
-test -z "$esed_cmd" && "$which_cmd" gsed >/dev/null 2>&1 && esed_cmd='gsed -r'
+test -z "${esed_cmd:-}" && "$which_cmd" gsed >/dev/null 2>&1 && esed_cmd='gsed -r'
 
-if [ -z "$esed_cmd" ]; then
+if [ -z "${esed_cmd:-}" ]; then
 	echo "ERROR: Your system doesn't have a sed command that supports extended" 1>&2
 	echo "regular expressions. If this is untrue, please report this as a bug." 1>&2
 	exit 1
@@ -220,7 +220,7 @@ print_config_summary () {
 	echo "x264 options: $_x264_options"
 }
 
-test -z "$1"         -o \
+test -z "${1:-}"     -o \
      "$1" = '--help' -o \
      "$1" = '-h'     -o \
      "$1" = 'help'   -o \
@@ -420,12 +420,12 @@ if [ -n "$config_version" -a $config_version -gt $pawl_config_version ]; then
 fi
 
 # Ensure input and output files are defined
-if [ -z "$dvd_source" ]; then
+if [ -z "${dvd_source:-}" ]; then
 	set +x
 	echo "ERROR: dvd_source is not defined." 1>&2
 	exit 1
 fi
-if [ -z "$output" ]; then
+if [ -z "${output:-}" ]; then
 	set +x
 	echo "ERROR: output is not defined." 1>&2
 	exit 1
@@ -577,7 +577,7 @@ fi
 
 # extractframe?
 if [ "$1" = 'extractframe' ]; then
-	if [ -z "$2" ]; then
+	if [ -z "${2:-}" ]; then
 		set +x
 		echo 'Missing required argument: frame(s) to extract. Aborting.' 1>&2
 		exit 1
