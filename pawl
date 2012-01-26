@@ -41,6 +41,8 @@ if [ "$(uname)" = "SunOS" -a "$SHELL" != "/usr/xpg4/bin/sh" ]; then
 	exit $?
 fi
 
+curdir=$(pwd)
+
 # This is the version of the configuration file. Bump this every time there's a
 # change to the default configuration that would justify a configuration
 # regeneration in existing projects.
@@ -246,7 +248,7 @@ if [ "$1" = "config" ]; then
 		. ./config
 		do_config_migration
 	else
-		output=$(pwd | $esed_cmd 's,.*/([^/]+)$,\1,')
+		output=${curdir##*/}
 		echo '!!!'
 	fi
 	cat <<_EOF_ > config
@@ -695,7 +697,7 @@ case "$chapter_markers" in
 	*)
 	chapter_markers='Yes'
 	_chapter_markers_arg='--markers='
-	_chapter_markers_filename=$(pwd)/chapters.csv
+	_chapter_markers_filename="${curdir}/chapters.csv"
 	;;
 esac
 
