@@ -90,14 +90,14 @@ WORKFLOW
      - Choose a chapter to test with. Edit config, change chapters.
 
      - Start the encode
-       nice pawl run
+       pawl run
 
      - Verify result, adjust config as needed, repeat as desired.
 
      - Edit chapters.csv if chapter names are desired.
 
      - Edit config, set chapters to 'all', process the entire film.
-       nice pawl run
+       pawl run
 
      - QA results, repeat last few steps as needed.
 
