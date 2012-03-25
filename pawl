@@ -867,7 +867,7 @@ HandBrakeCLI	-i "$dvd_source" \
 		$_anamorphic_arg \
 		-a "$_audio_tracks" -E "$_audio_encoder" \
 		-B "$_audio_bitrate" \
-		--mixdown "$_audio_mixdown" \
+		-6 "$_audio_mixdown" \
 		$_framerate_arg \
 		-q "$quality" \
 		$_chapter_arg \
