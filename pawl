@@ -126,11 +126,11 @@ if "$which_cmd" HandBrakeCLI >/dev/null 2>&1; then
 	            awk '/^HandBrake [^ ]+$/ {print $2}')
 	if echo "$hb_version" | grep '^svn' >/dev/null 2>&1; then
 		hb_version=$(echo "$hb_version" | sed s,^svn,,)
-		if [ $hb_version -ge 3735 ]; then
+		if [ $hb_version -ge 4431 ]; then
 			has_compatible_hb=1
 		fi
 		hb_version="svn${hb_version}"
-	elif [ "$hb_version" = '0.9.5' ]; then
+	elif [ "$hb_version" = '0.9.6' ]; then
 		has_compatible_hb=1
 	fi
 
