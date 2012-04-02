@@ -60,7 +60,7 @@ curdir=$(pwd)
 # This is the version of the configuration file. Bump this every time there's a
 # change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='16'
+pawl_config_version='17'
 
 # Defaults
 disable_dvdnav='No'
@@ -73,7 +73,9 @@ audio_mixdown='dpl2'
 subtitles=''
 framerate='same'
 quality='0.68'
-x264_preset='grain'
+x264_profile=''
+x264_preset='veryslow'
+x264_tune='grain'
 crop='auto'
 anamorphic='Yes'
 anamorphic_style='strict'
@@ -180,6 +182,14 @@ do_config_migration () {
 			print $0
 		}')
 	fi
+	# config_version 17 marks the introduction of HandBrake 0.9.6 which
+	# introduces x264 profile/preset/tune and deprecates pawl's version of
+	# the same thing.
+	if [ $config_version -le 16 ]; then
+		x264_profile=''
+		x264_tune="$x264_preset"
+		x264_preset='veryslow'
+	fi
 }
 
 usage () {
@@ -201,35 +211,44 @@ usage () {
 }
 
 print_config_summary () {
-	echo "Disable dvdnav: $disable_dvdnav"
-	echo "DVD source: $dvd_source"
-	echo "Output filename: ${output}.${output_format}"
-	echo "Audio tracks: $audio_tracks"
-	echo "Audio encoder: $audio_encoder"
-	echo "Audio bitrate: $audio_bitrate"
-	echo "Audio mixdown: $audio_mixdown"
-	echo "Subtitles: $subtitles"
-	echo "Frame rate: $framerate"
-	echo "Video quality: $quality"
-	echo "Video cropping: $crop"
-	echo "Anamorphic video: $anamorphic ($anamorphic_style)"
-	echo "Video title: $title"
-	echo "Video chapters: $chapters"
+	echo 'General:'
+	echo "  Disable dvdnav: $disable_dvdnav"
+	echo 'Source:'
+	echo "  DVD source: $dvd_source"
+	echo "  Title: $title"
+	echo "  Chapters: $chapters"
 	if [ $angle -gt 1 ]; then
-		echo "Video angle: $angle"
+		echo "  Video angle: $angle"
 	fi
-	echo "Chapter markers: $chapter_markers"
-	echo "Grayscale encoding: $grayscale"
-	echo "Deinterlace video: $deinterlace"
+	echo 'Destination:'
+	echo "  Output filename: ${output}.${output_format}"
+	echo "  Chapter markers: $chapter_markers"
+	echo 'Video:'
+	test -n "$x264_profile" && echo "  x264 profile: $x264_profile"
+	test -n "$x264_preset"  && echo "  x264 preset: $x264_preset"
+	test -n "$x264_tune"    && echo "  x264 tune: $x264_tune"
+	echo "  Frame rate: $framerate"
+	echo "  Quality: $quality"
+	echo 'Audio:'
+	echo "  Tracks: $audio_tracks"
+	echo "  Encoder: $audio_encoder"
+	echo "  Bitrate: $audio_bitrate"
+	echo "  Mixdown: $audio_mixdown"
+	echo 'Picture:'
+	echo "  Cropping: $crop"
+	echo "  Anamorphic: $anamorphic ($anamorphic_style)"
+	echo 'Filters:'
+	echo "  Deinterlace: $deinterlace"
 	if [ "$deinterlace" != 'No' -a -n "$deinterlace_params" ]; then
-		echo "Deinterlace params: $deinterlace_params"
+		echo "  Deinterlace params: $deinterlace_params"
 	fi
-	echo "Decomb video: $decomb"
+	echo "  Decomb: $decomb"
 	if [ "$decomb" != 'No' -a -n "$decomb_params" ]; then
-		echo "Decomb params: $decomb_params"
+		echo "  Decomb params: $decomb_params"
 	fi
-	echo "x264 preset: $x264_preset"
-	echo "x264 options: $_x264_options"
+	echo "  Grayscale: $grayscale"
+	echo 'Subtitles:'
+	echo "  Subtitles: $subtitles"
 }
 
 test -z "${1:-}"         -o \
@@ -315,13 +334,21 @@ chapter_markers='$chapter_markers'
 # Video quality. [0.0 - 1.0] Default: 0.68
 quality='$quality'
 
-# x264 preset. [normal/film/grain/animation] Default: grain
-# Optimize video encoding based on your source material and/or needs.
-# Normal    - x264 high profile defaults.
-# Film      - Optimize for film content.
-# Grain     - Optimize for grainy content (will retain grain/fine details).
-# Animation - Optimize for animated content.
+# x264 profile. [baseline/main/high/high10/high422/high444] Default: none
+# Enforce the limits of an H.264 profile. Choose based on target devices. Most
+# of the time you can leave this blank unless you're encoding for an embedded
+# device.
+x264_profile='$x264_profile'
+
+# x264 preset. [ultrafast/superfast/veryfast/faster/fast/medium/slow/slower/veryslow/placebo] Default: none
+# Compression efficiency vs. encoding speed. Set it as slow as you can handle.
+# Placebo is only good for testing. Veryslow is typically what you'd want.
 x264_preset='$x264_preset'
+
+# x264 tune. [film/animation/grain/stillimage/psnr/ssim/fastdecode/zerolatency] Default: none
+# Tune based on source material. psnr/ssim is for testing. film/animation/grain
+# are the most useful.
+x264_tune='$x264_tune'
 
 # Video framerate. [same/5/10/12/15/23.976/24/25/29.97] Default: Same as source
 framerate='$framerate'
@@ -442,49 +469,6 @@ if [ -z "${output:-}" ]; then
 	error 'output is not defined.'
 fi
 
-#
-# x264 defaults
-#
-
-# Included in all but normal
-x264_options_preset_standard="
-nr=0
-ref=6
-mixed-refs
-direct=auto
-bframes=3
-weightb
-subme=9
-trellis=1
-partitions=i8x8,p8x8,b8x8
-8x8dct
-me=umh
-no-fast-pskip
-b-adapt=2
-rc-lookahead=60"
-
-x264_options_preset_grain="
-deblock=-2,-2
-psy-rd=1.0,0.25
-no-dct-decimate
-ipratio=1.1
-pbratio=1.1
-aq-strength=0.5
-deadzone-intra=6
-deadzone-inter=6
-qcomp=0.8"
-
-x264_options_preset_film="
-deblock=-1,-1
-psy-rd=1,0.15"
-
-x264_options_preset_animation="
-ref=12
-deblock=1,1
-psy-rd=0.4,0
-aq-strength=0.6
-bframes=5"
-
 # Use mkv container. It supports everything.
 output_format='mkv'
 
@@ -498,7 +482,6 @@ output_format='mkv'
 : ${audio_mixdown:='dpl2'}
 : ${framerate:='same'}
 : ${quality:='0.68'}
-: ${x264_preset:='grain'}
 : ${crop:='auto'}
 : ${angle:='1'}
 
@@ -792,30 +775,67 @@ if [ "$decomb" != 'No' -a -n "$decomb_params" ]; then
 fi
 
 # x264 options
-case "$x264_preset" in
-	[nN][oO][rR][mM][aA][lL])
-	x264_preset='Normal'
-	x264_options=''
-	;;
-	[fF][iI][lL][mM])
-	x264_preset='Film'
-	x264_options="$x264_options_preset_standard $x264_options_preset_film"
-	;;
-	[gG][rR][aA][iI][nN])
-	x264_preset='Grain'
-	x264_options="$x264_options_preset_standard $x264_options_preset_grain"
-	;;
-	[aA][nN][iI][mM][aA][tT][iI][oO][nN])
-	x264_preset='Animation'
-	x264_options="$x264_options_preset_standard $x264_options_preset_animation"
-	;;
+_x264_args=''
+x264_profile=$(echo "$x264_profile" | tr 'A-Z' 'a-z')
+x264_preset=$(echo "$x264_preset" | tr 'A-Z' 'a-z')
+x264_tune=$(echo "$x264_tune"  | tr 'A-Z' 'a-z')
+
+case "$x264_profile" in
+	baseline) : ;;
+	main)     : ;;
+	high)     : ;;
+	high10)   : ;;
+	high422)  : ;;
+	high444)  : ;;
+	'')       : ;;
 	*)
-	error "Unknown x264_preset, $x264_preset"
+	set +x
+	echo 'ERROR: Unknown x264_profile option.' 1>&2
+	exit 1
+esac
+if [ -n "$x264_profile" ]; then
+	_x264_args="$_x264_args --x264-profile=$x264_profile"
+fi
+
+case "$x264_preset" in
+	ultrafast) : ;;
+	superfast) : ;;
+	veryfast)  : ;;
+	faster)    : ;;
+	fast)      : ;;
+	medium)    : ;;
+	slow)      : ;;
+	slower)    : ;;
+	veryslow)  : ;;
+	placebo)   : ;;
+	'')        : ;;
+	*)
+	error 'Unknown x264_preset option.'
 	;;
 esac
-_x264_options=$(echo $x264_options | sed 's/[ 	]\+/:/g')
+if [ -n "$x264_preset" ]; then
+	_x264_args="$_x264_args --x264-preset=$x264_preset"
+fi
 
-# play output?
+case "$x264_tune" in
+	film)        : ;;
+	animation)   : ;;
+	grain)       : ;;
+	stillimage)  : ;;
+	psnr)        : ;;
+	ssim)        : ;;
+	fastdecode)  : ;;
+	zerolatency) : ;;
+	'')          : ;;
+	*)
+	set +x
+	echo 'ERROR: Unknown x264_tune option.' 1>&2
+	exit 1
+esac
+if [ -n "$x264_tune" ]; then
+	_x264_args="$_x264_args --x264-tune=$x264_tune"
+fi
+
 if [ "$1" = 'showconfig' ]; then
 	set +x
 	print_config_summary
@@ -873,6 +893,7 @@ HandBrakeCLI	$_disable_dvdnav_arg \
 		-o "${output}.${output_format}" \
 		-t "$title" \
 		-e x264 \
+		$_x264_args \
 		$_crop_arg \
 		$_anamorphic_arg \
 		-a "$_audio_tracks" -E "$_audio_encoder" \
@@ -886,5 +907,4 @@ HandBrakeCLI	$_disable_dvdnav_arg \
 		$_subtitle_arg \
 		$_grayscale_arg \
 		$_deinterlace_arg \
-		$_decomb_arg \
-		-x "$_x264_options" 2>&1 | tee -a work.log
+		$_decomb_arg 2>&1 | tee -a work.log
