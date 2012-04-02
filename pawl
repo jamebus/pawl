@@ -49,6 +49,7 @@ curdir=$(pwd)
 pawl_config_version='16'
 
 # Defaults
+disable_dvdnav='No'
 dvd_source='/dev/dvd'
 output=''
 audio_tracks='1'
@@ -192,6 +193,7 @@ usage () {
 }
 
 print_config_summary () {
+	echo "Disable dvdnav: $disable_dvdnav"
 	echo "DVD source: $dvd_source"
 	echo "Output filename: ${output}.${output_format}"
 	echo "Audio tracks: $audio_tracks"
@@ -255,6 +257,15 @@ if [ "$1" = "config" ]; then
 #
 # pawl project configuration file.
 #
+
+#
+# General
+#
+
+# Do not use dvdnav for reading DVDs, use dvdread instead. Default: No
+# If you have a badly-authored or damaged DVD, dvdnav may not be able to read
+# it.
+disable_dvdnav='$disable_dvdnav'
 
 #
 # Source
@@ -480,6 +491,7 @@ bframes=5"
 output_format='mkv'
 
 # Re-set some mandatory defaults if the config file blanked them out.
+: ${disable_dvdnav:='No'}
 : ${dvd_source:='/dev/dvd'}
 : ${title:='1'}
 : ${audio_tracks:='1'}
@@ -633,6 +645,18 @@ if [ "$1" = 'playout' ]; then
 	mplayer "${output}.${output_format}"
 	exit $?
 fi
+
+# Disable dvdnav?
+case "$disable_dvdnav" in
+	[yY][eE][sS])
+	_disable_dvdnav_arg='--no-dvdnav'
+	disable_dvdnav='Yes'
+	;;
+	*)
+	_disable_dvdnav_arg=''
+	disable_dvdnav='No'
+	;;
+esac
 
 # Cropping?
 case "$crop" in
@@ -858,7 +882,8 @@ if [ $pawl_config_version -gt $config_version ]; then
 	set -x
 fi
 
-HandBrakeCLI	-i "$dvd_source" \
+HandBrakeCLI	$_disable_dvdnav_arg \
+		-i "$dvd_source" \
 		-f "${output_format}" \
 		-o "${output}.${output_format}" \
 		-t "$title" \
