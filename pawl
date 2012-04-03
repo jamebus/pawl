@@ -60,7 +60,7 @@ curdir=$(pwd)
 # This is the version of the configuration file. Bump this every time there's a
 # change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='17'
+pawl_config_version='18'
 
 # Defaults
 disable_dvdnav='No'
@@ -72,7 +72,7 @@ audio_bitrate='160'
 audio_mixdown='dpl2'
 subtitles=''
 framerate='same'
-quality='0.68'
+quality='16'
 x264_profile=''
 x264_preset='veryslow'
 x264_tune='grain'
@@ -189,6 +189,11 @@ do_config_migration () {
 		x264_profile=''
 		x264_tune="$x264_preset"
 		x264_preset='veryslow'
+	fi
+	# config_version 18 marks the migration from percent-based quality to
+	# RF.
+	if [ $config_version -le 17 ]; then
+		quality=$(awk -v quality="$quality" 'BEGIN { if ( quality < 1 ) print ( 1 - quality ) * 51; exit }')
 	fi
 }
 
@@ -331,7 +336,9 @@ chapter_markers='$chapter_markers'
 # Video encoding
 #
 
-# Video quality. [0.0 - 1.0] Default: 0.68
+# Video quality (x264 rate factor). [0 - 51] Default: 16
+# Lower = less compression. Scale is logarithmic. Useful values: 20-16.
+# 16 is pretty much lossless and 19 scrapes the edge of most footage.
 quality='$quality'
 
 # x264 profile. [baseline/main/high/high10/high422/high444] Default: none
@@ -481,7 +488,7 @@ output_format='mkv'
 : ${audio_bitrate:='160'}
 : ${audio_mixdown:='dpl2'}
 : ${framerate:='same'}
-: ${quality:='0.68'}
+: ${quality:='16'}
 : ${crop:='auto'}
 : ${angle:='1'}
 
