@@ -367,11 +367,13 @@ framerate='$framerate'
 # Audio tracks to include. [int space separated or none] Default: 1
 audio_tracks='$audio_tracks'
 
-# Audio encoder. [faac/lame/vorbis/ac3/copy/copy:ac3/copy:dts] Default: copy
+# Audio encoder. [faac/ffaac/copy:aac/ffac3/copy:ac3/copy:dts/copy:dtshd/lame/copy:mp3/vorbis/ffflac/copy] Default: copy
 # If you're including multiple audio tracks and want to use a different encoder
 # for some of them, list the encoders you want to use space separated, ordered
-# by the audio tracks you're including. When encoding an ac3 or dts track, you
-# may passthrough the audio track untouched using copy, copy:ac3, or copy:dts.
+# by the audio tracks you're including. When encoding an aac, ac3, dts, or
+# dtshd track, you may passthrough the audio track untouched using copy. If you
+# want to passthrough certain types use copy:X. Where X can be
+# aac/ac3/dts/dtshd.
 audio_encoder='$audio_encoder'
 
 # Audio bitrate. [int space separated or none] Default: 160
@@ -494,7 +496,6 @@ output_format='mkv'
 
 # Normalize
 _audio_tracks=$(echo $audio_tracks | sed 's/[ 	]\+/,/g')
-_audio_encoder=$(echo $audio_encoder | sed 's/[ 	]\+/,/g')
 _audio_bitrate=$(echo $audio_bitrate | sed 's/[ 	]\+/,/g')
 _audio_mixdown=$(echo $audio_mixdown | sed 's/[ 	]\+/,/g')
 _subtitles=$(echo $subtitles | sed 's/[ 	]\+/,/g')
@@ -780,6 +781,31 @@ esac
 if [ "$decomb" != 'No' -a -n "$decomb_params" ]; then
 	_decomb_arg="$_decomb_arg=${decomb_params}"
 fi
+
+# Audio encoding options
+audio_encoder=$(echo "$audio_encoder" | tr 'A-Z' 'a-z')
+_audio_encoder=''
+for e in $audio_encoder; do
+	case $e in
+		faac)       : ;;
+		ffaac)      : ;;
+		copy:aac)   : ;;
+		ffac3)      : ;;
+		copy:ac3)   : ;;
+		copy:dts)   : ;;
+		copy:dtshd) : ;;
+		lame)       : ;;
+		copy:mp3)   : ;;
+		vorbis)     : ;;
+		ffflac)     : ;;
+		copy)       : ;;
+		*)
+		error "Unknown audio_encoder option: ${e}."
+		;;
+	esac
+	_audio_encoder="${_audio_encoder},${e}"
+done
+_audio_encoder="${_audio_encoder#,}"
 
 # x264 options
 _x264_args=''
