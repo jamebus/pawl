@@ -43,12 +43,14 @@ fi
 
 error () {
 	set +x
+	echo
 	echo "ERROR: $1" | fmt 1>&2
 	exit ${2:-1}
 }
 
 assert () {
 	set +x
+	echo
 	echo "ASSERT: $1" | fmt 1>&2
 	exit ${2:-1}
 }
