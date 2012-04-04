@@ -789,9 +789,8 @@ case "$x264_profile" in
 	high444)  : ;;
 	'')       : ;;
 	*)
-	set +x
-	echo 'ERROR: Unknown x264_profile option.' 1>&2
-	exit 1
+	error 'Unknown x264_profile option.'
+	;;
 esac
 if [ -n "$x264_profile" ]; then
 	_x264_args="$_x264_args --x264-profile=$x264_profile"
@@ -828,9 +827,8 @@ case "$x264_tune" in
 	zerolatency) : ;;
 	'')          : ;;
 	*)
-	set +x
-	echo 'ERROR: Unknown x264_tune option.' 1>&2
-	exit 1
+	error 'Unknown x264_tune option.'
+	;;
 esac
 if [ -n "$x264_tune" ]; then
 	_x264_args="$_x264_args --x264-tune=$x264_tune"
