@@ -60,7 +60,7 @@ curdir=$(pwd)
 # This is the version of the configuration file. Bump this every time there's a
 # change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='18'
+pawl_config_version='19'
 
 # Defaults
 disable_dvdnav='No'
@@ -68,6 +68,7 @@ dvd_source='/dev/dvd'
 output=''
 audio_tracks='1'
 audio_encoder='copy'
+audio_copy_mask='all'
 audio_bitrate='160'
 audio_mixdown='dpl2'
 subtitles=''
@@ -237,6 +238,9 @@ print_config_summary () {
 	echo 'Audio:'
 	echo "  Tracks: $audio_tracks"
 	echo "  Encoder: $audio_encoder"
+	if [ -n "${_audio_copy_enabled:-}" ]; then
+		echo "  Copy mask: $audio_copy_mask"
+	fi
 	echo "  Bitrate: $audio_bitrate"
 	echo "  Mixdown: $audio_mixdown"
 	echo 'Picture:'
@@ -376,6 +380,11 @@ audio_tracks='$audio_tracks'
 # aac/ac3/dts/dtshd.
 audio_encoder='$audio_encoder'
 
+# Audio copy mask. [aac/ac3/dts/dtshd/mp3] Default: all
+# Set audio codecs that are permitted when the copy audio encoder option is
+# specified. Space separated.
+audio_copy_mask='$audio_copy_mask'
+
 # Audio bitrate. [int space separated or none] Default: 160
 # If you're including multiple audio tracks and want to use a different bitrate
 # for some of them, list the bitrates you want to use space separated, ordered
@@ -487,6 +496,7 @@ output_format='mkv'
 : ${title:='1'}
 : ${audio_tracks:='1'}
 : ${audio_encoder:='copy'}
+: ${audio_copy_mask:='all'}
 : ${audio_bitrate:='160'}
 : ${audio_mixdown:='dpl2'}
 : ${framerate:='same'}
@@ -798,7 +808,7 @@ for e in $audio_encoder; do
 		copy:mp3)   : ;;
 		vorbis)     : ;;
 		ffflac)     : ;;
-		copy)       : ;;
+		copy) _audio_copy_enabled=1 ;;
 		*)
 		error "Unknown audio_encoder option: ${e}."
 		;;
@@ -806,6 +816,32 @@ for e in $audio_encoder; do
 	_audio_encoder="${_audio_encoder},${e}"
 done
 _audio_encoder="${_audio_encoder#,}"
+
+# Audio copy mask options
+_audio_copy_mask_arg=''
+if [ -n "${_audio_copy_enabled:-}" ]; then
+	audio_copy_mask=$(echo "$audio_copy_mask" | tr 'A-Z' 'a-z')
+	_audio_copy_mask=''
+	if [ "$audio_copy_mask" != 'all' ]; then
+		for m in $audio_copy_mask; do
+			case $m in
+				aac)   : ;;
+				ac3)   : ;;
+				dts)   : ;;
+				dtshd) : ;;
+				mp3)   : ;;
+				all)
+				error 'audio_copy_mask option all is mutually exclusive with the others.'
+				;;
+				*)
+				error "Unknown audio_copy_mask option: ${m}."
+				;;
+			esac
+			_audio_copy_mask="${_audio_copy_mask},${m}"
+		done
+		_audio_copy_mask_arg="--audio-copy-mask=${_audio_copy_mask#,}"
+	fi
+fi
 
 # x264 options
 _x264_args=''
@@ -928,6 +964,7 @@ HandBrakeCLI	$_disable_dvdnav_arg \
 		$_crop_arg \
 		$_anamorphic_arg \
 		-a "$_audio_tracks" -E "$_audio_encoder" \
+		$_audio_copy_mask_arg \
 		-B "$_audio_bitrate" \
 		-6 "$_audio_mixdown" \
 		$_framerate_arg \
