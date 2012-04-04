@@ -41,6 +41,18 @@ if [ "$(uname)" = "SunOS" -a "$SHELL" != "/usr/xpg4/bin/sh" ]; then
 	exit $?
 fi
 
+error () {
+	set +x
+	echo "ERROR: $1" | fmt 1>&2
+	exit ${2:-1}
+}
+
+assert () {
+	set +x
+	echo "ASSERT: $1" | fmt 1>&2
+	exit ${2:-1}
+}
+
 curdir=$(pwd)
 
 # This is the version of the configuration file. Bump this every time there's a
@@ -100,9 +112,7 @@ test "$t" = '01234 hi' && esed_cmd='sed -r'
 test -z "${esed_cmd:-}" && "$which_cmd" gsed >/dev/null 2>&1 && esed_cmd='gsed -r'
 
 if [ -z "${esed_cmd:-}" ]; then
-	echo "ERROR: Your system doesn't have a sed command that supports extended" 1>&2
-	echo "regular expressions. If this is untrue, please report this as a bug." 1>&2
-	exit 1
+	error "Your system doesn't have a sed command that supports extended regular expressions. If this is untrue, please report this as a bug."
 fi
 
 # Make sure we have the appropriate version of HandBrake. Is there a better way
@@ -123,12 +133,10 @@ if "$which_cmd" HandBrakeCLI >/dev/null 2>&1; then
 	fi
 
 	if [ $has_compatible_hb -eq 0 ]; then
-		echo "ERROR: Incompatible HandBrakeCLI, found version ${hb_version}." 1>&2
-		exit 1
+		error "Incompatible HandBrakeCLI, found version ${hb_version}."
 	fi
 else
-	echo 'ERROR: Unable to find HandBrakeCLI. Is it present and in your $PATH?' 1>&2
-	exit 1
+	error 'Unable to find HandBrakeCLI. Is it present and in your $PATH?'
 fi
 
 has_cmd () {
@@ -142,9 +150,7 @@ has_cmd () {
 
 require_cmd () {
 	if ! has_cmd "$1" ; then
-		set +x
-		echo "ERROR: $1 is required for this function." 1>&2
-		exit 1
+		error "$1 is required for this function."
 	fi
 	return 0
 }
@@ -418,30 +424,20 @@ if [ -r config ]; then
 	. ./config
 	do_config_migration
 else
-	set +x
-	echo 'Unable to read configuration file. Aborting.' 1>&2
-	exit 1
+	error 'Unable to read configuration file. Aborting.'
 fi
 
 # Is config_version newer than what pawl supports?
 if [ -n "$config_version" -a $config_version -gt $pawl_config_version ]; then
-	set +x
-	echo "This version of pawl is too old to support your project's configuration" 1>&2
-	echo "file. I support version $pawl_config_version, your configuration version is $config_version." 1>&2
-	echo "Re-scaffolding your config will fix this, but you may lose features." 1>&2
-	exit 1
+	error "This version of pawl is too old to support your project's configuration file. I support version $pawl_config_version, your configuration version is $config_version. Re-scaffolding your config will fix this, but you may lose features."
 fi
 
 # Ensure input and output files are defined
 if [ -z "${dvd_source:-}" ]; then
-	set +x
-	echo "ERROR: dvd_source is not defined." 1>&2
-	exit 1
+	error 'dvd_source is not defined.'
 fi
 if [ -z "${output:-}" ]; then
-	set +x
-	echo "ERROR: output is not defined." 1>&2
-	exit 1
+	error 'output is not defined.'
 fi
 
 #
@@ -569,20 +565,14 @@ if [ "$1" = 'compare' ]; then
 	if [ -b "$dvd_source" ]; then
 		dvd_device=$(realpath "$dvd_source")
 		if ! mount | grep "^${dvd_device} on " >/dev/null 2>&1; then
-			set +x
-			echo 'DVD not present in drive. Aborting.' 1>&2
-			exit 1
+			error 'DVD not present in drive. Aborting.'
 		fi
 		_dvd_source=$(mount | grep "^${dvd_device} on " | awk '{print $3}')
 	elif [ ! -e "$dvd_source" ]; then
-		set +x
-		echo 'DVD source not present. Aborting.' 1>&2
-		exit 1
+		error 'DVD source not present. Aborting.'
 	fi
 	if [ ! -f "${output}.${output_format}" ]; then
-		set +x
-		echo 'Project output file not present. Aborting.' 1>&2
-		exit 1
+		error 'Project output file not present. Aborting.'
 	fi
 	set +x
 	du -sh "$_dvd_source" "${output}.${output_format}"
@@ -592,9 +582,7 @@ fi
 # extractframe?
 if [ "$1" = 'extractframe' ]; then
 	if [ -z "${2:-}" ]; then
-		set +x
-		echo 'Missing required argument: frame(s) to extract. Aborting.' 1>&2
-		exit 1
+		error 'Missing required argument: frame(s) to extract. Aborting.'
 	fi
 
 	require_cmd transcode
@@ -636,14 +624,14 @@ fi
 if [ "$1" = 'playsrc' ]; then
 	require_cmd mplayer
 	mplayer -dvd-device "$dvd_source" $mplayer_chapters_arg dvd://"${title}"
-	exit $?
+	exit
 fi
 
 # play output?
 if [ "$1" = 'playout' ]; then
 	require_cmd mplayer
 	mplayer "${output}.${output_format}"
-	exit $?
+	exit
 fi
 
 # Disable dvdnav?
@@ -820,10 +808,7 @@ case "$x264_preset" in
 	x264_options="$x264_options_preset_standard $x264_options_preset_animation"
 	;;
 	*)
-	set +x
-	echo "ERROR: Unknown x264_preset, $x264_preset" 1>&2
-	echo 'Aborting!' 1>&2
-	exit 1
+	error "Unknown x264_preset, $x264_preset"
 	;;
 esac
 _x264_options=$(echo $x264_options | sed 's/[ 	]\+/:/g')
@@ -838,9 +823,7 @@ fi
 # Assertion: If we're this far, we're running a project. Make sure the user
 # asked for this.
 if [ "$1" != 'run' ]; then
-	set +x
-	echo 'ASSERT: Fell through option handling logic.' 1>&2
-	exit 1
+	assert 'Fell through option handling logic.'
 fi
 
 # Create chapters.csv if needed.
