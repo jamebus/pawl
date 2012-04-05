@@ -874,6 +874,22 @@ if [ -n "${_audio_copy_enabled:-}" -o -n "${_audio_copy_s_enabled:-}" ]; then
 	fi
 fi
 
+# Audio bitrate options
+_audio_bitrate_arg=''
+if [ -n "$audio_bitrate" ]; then
+	_audio_bitrate_arg="-B $audio_bitrate"
+else
+	audio_bitrate='Auto'
+fi
+
+# Audio mixdown options
+_audio_mixdown_arg=''
+if [ -n "$audio_mixdown" ]; then
+	_audio_mixdown_arg="-6 $audio_mixdown"
+else
+	audio_mixdown='Auto'
+fi
+
 # x264 options
 _x264_args=''
 x264_profile=$(echo "$x264_profile" | tr 'A-Z' 'a-z')
@@ -997,8 +1013,8 @@ HandBrakeCLI	$_disable_dvdnav_arg \
 		-a "$_audio_tracks" -E "$_audio_encoder" \
 		$_audio_copy_mask_arg \
 		$_audio_copy_fallback_arg \
-		-B "$_audio_bitrate" \
-		-6 "$_audio_mixdown" \
+		$_audio_bitrate_arg \
+		$_audio_mixdown_arg \
 		$_framerate_arg \
 		-q "$quality" \
 		$_chapter_arg \
