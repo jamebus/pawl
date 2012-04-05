@@ -60,7 +60,7 @@ curdir=$(pwd)
 # This is the version of the configuration file. Bump this every time there's a
 # change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='21'
+pawl_config_version='22'
 
 # Defaults
 disable_dvdnav='No'
@@ -70,8 +70,8 @@ audio_tracks='1'
 audio_encoder='copy'
 audio_copy_mask='all'
 audio_copy_fallback='ffflac'
-audio_bitrate='160'
-audio_mixdown='6ch'
+audio_bitrate=''
+audio_mixdown=''
 subtitles=''
 framerate='same'
 quality='16'
@@ -395,14 +395,16 @@ audio_copy_mask='$audio_copy_mask'
 # re-encoding.
 audio_copy_fallback='$audio_copy_fallback'
 
-# Audio bitrate. [int space separated or none] Default: 160
-# If you're including multiple audio tracks and want to use a different bitrate
-# for some of them, list the bitrates you want to use space separated, ordered
-# by the audio tracks you're including. This parameter is ignored if the track
-# is ac3 or dts passthrough, it is used for faac/lame/vorbis.
+# Audio bitrate. [int space separated or blank/auto] Default: auto
+# The default depends on the codec, mixdown, and samplerate. If you're
+# including multiple audio tracks and want to use a different bitrate for some
+# of them, list the bitrates you want to use space separated, ordered by the
+# audio tracks you're including. This parameter is ignored if the track is
+# copied.
 audio_bitrate='$audio_bitrate'
 
-# Audio mixdown. [mono/stereo/dpl1/dpl2/6ch] Default: 6ch
+# Audio mixdown. [mono/stereo/dpl1/dpl2/6ch or blank/auto] Default: auto
+# The default depends on the source track and capabilities of the target codec.
 # If using a non-passthrough audio format, you may choose your mixdown
 # preference. It will be sanitized to something appropriate in the event you,
 # for example, choose dpl2 on a stereo track. This parameter is ignored if the
@@ -508,8 +510,6 @@ output_format='mkv'
 : ${audio_encoder:='copy'}
 : ${audio_copy_mask:='all'}
 : ${audio_copy_fallback:='fflac'}
-: ${audio_bitrate:='160'}
-: ${audio_mixdown:='6ch'}
 : ${framerate:='same'}
 : ${quality:='16'}
 : ${crop:='auto'}
