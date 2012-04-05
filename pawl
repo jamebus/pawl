@@ -174,7 +174,7 @@ do_config_migration () {
 	# adjusted setting will be written to your new config. All this is very
 	# awesomely POLA.
 	if [ $config_version -le 15 ]; then
-		audio_encoder=$(echo $audio_encoder | awk '
+		audio_encoder=$(echo "$audio_encoder" | awk '
 		{
 			for (i = 1; i <= NF; i++) {
 				if ($i == "ac3" || $i == "dts") {
@@ -516,11 +516,15 @@ output_format='mkv'
 : ${angle:='1'}
 
 # Normalize
-_audio_tracks=$(echo $audio_tracks | sed 's/[ 	]\+/,/g')
-_audio_bitrate=$(echo $audio_bitrate | sed 's/[ 	]\+/,/g')
-_audio_mixdown=$(echo $audio_mixdown | sed 's/[ 	]\+/,/g')
-_subtitles=$(echo $subtitles | sed 's/[ 	]\+/,/g')
+_audio_tracks=$(echo "$audio_tracks" | sed 's/[ 	]\+/,/g')
+_audio_bitrate=$(echo "$audio_bitrate" | sed 's/[ 	]\+/,/g')
+_audio_mixdown=$(echo "$audio_mixdown" | sed 's/[ 	]\+/,/g')
+_subtitles=$(echo "$subtitles" | sed 's/[ 	]\+/,/g')
 test "$chapters" = 'all' && chapters=''
+
+# Sanitize, these are used bare.
+_audio_bitrate=$(echo "$_audio_bitrate" | $esed_cmd 's,[^A-Za-z0-9\,],,g')
+_audio_mixdown=$(echo "$_audio_mixdown" | $esed_cmd 's,[^A-Za-z0-9\,],,g')
 
 if [ -n "$chapters" ]; then
 	tc_title_chapters_arg="-T ${title},${chapters}"
@@ -877,7 +881,7 @@ fi
 # Audio bitrate options
 _audio_bitrate_arg=''
 if [ -n "$audio_bitrate" ]; then
-	_audio_bitrate_arg="-B $audio_bitrate"
+	_audio_bitrate_arg="-B $_audio_bitrate"
 else
 	audio_bitrate='Auto'
 fi
@@ -885,7 +889,7 @@ fi
 # Audio mixdown options
 _audio_mixdown_arg=''
 if [ -n "$audio_mixdown" ]; then
-	_audio_mixdown_arg="-6 $audio_mixdown"
+	_audio_mixdown_arg="-6 $_audio_mixdown"
 else
 	audio_mixdown='Auto'
 fi
