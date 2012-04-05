@@ -191,6 +191,7 @@ do_config_migration () {
 		x264_profile=''
 		x264_tune="$x264_preset"
 		x264_preset='veryslow'
+		test "$x264_tune" = 'normal' && x264_tune=''
 	fi
 	# config_version 18 marks the migration from percent-based quality to
 	# RF.
