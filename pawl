@@ -60,7 +60,7 @@ curdir=$(pwd)
 # This is the version of the configuration file. Bump this every time there's a
 # change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='19'
+pawl_config_version='20'
 
 # Defaults
 disable_dvdnav='No'
@@ -69,6 +69,7 @@ output=''
 audio_tracks='1'
 audio_encoder='copy'
 audio_copy_mask='all'
+audio_copy_fallback='ffflac'
 audio_bitrate='160'
 audio_mixdown='dpl2'
 subtitles=''
@@ -241,6 +242,9 @@ print_config_summary () {
 	if [ -n "${_audio_copy_enabled:-}" ]; then
 		echo "  Copy mask: $audio_copy_mask"
 	fi
+	if [ -n "${_audio_copy_enabled:-}" -o -n "${_audio_copy_s_enabled:-}" ]; then
+		echo "  Fallback encoder: $audio_copy_fallback"
+	fi
 	echo "  Bitrate: $audio_bitrate"
 	echo "  Mixdown: $audio_mixdown"
 	echo 'Picture:'
@@ -385,6 +389,11 @@ audio_encoder='$audio_encoder'
 # specified. Space separated.
 audio_copy_mask='$audio_copy_mask'
 
+# Fallback audio encoder. [faac/ffaac/ffac3/lame/vorbis/ffflac] Default: ffflac
+# Audio encoder to use when it is not possible to copy an audio track without
+# re-encoding.
+audio_copy_fallback='$audio_copy_fallback'
+
 # Audio bitrate. [int space separated or none] Default: 160
 # If you're including multiple audio tracks and want to use a different bitrate
 # for some of them, list the bitrates you want to use space separated, ordered
@@ -497,6 +506,7 @@ output_format='mkv'
 : ${audio_tracks:='1'}
 : ${audio_encoder:='copy'}
 : ${audio_copy_mask:='all'}
+: ${audio_copy_fallback:='fflac'}
 : ${audio_bitrate:='160'}
 : ${audio_mixdown:='dpl2'}
 : ${framerate:='same'}
@@ -799,16 +809,16 @@ for e in $audio_encoder; do
 	case $e in
 		faac)       : ;;
 		ffaac)      : ;;
-		copy:aac)   : ;;
+		copy:aac)   _audio_copy_s_enabled=1 ;;
 		ffac3)      : ;;
-		copy:ac3)   : ;;
-		copy:dts)   : ;;
-		copy:dtshd) : ;;
+		copy:ac3)   _audio_copy_s_enabled=1 ;;
+		copy:dts)   _audio_copy_s_enabled=1 ;;
+		copy:dtshd) _audio_copy_s_enabled=1 ;;
 		lame)       : ;;
-		copy:mp3)   : ;;
+		copy:mp3)   _audio_copy_s_enabled=1 ;;
 		vorbis)     : ;;
 		ffflac)     : ;;
-		copy) _audio_copy_enabled=1 ;;
+		copy)       _audio_copy_enabled=1   ;;
 		*)
 		error "Unknown audio_encoder option: ${e}."
 		;;
@@ -840,6 +850,26 @@ if [ -n "${_audio_copy_enabled:-}" ]; then
 			_audio_copy_mask="${_audio_copy_mask},${m}"
 		done
 		_audio_copy_mask_arg="--audio-copy-mask=${_audio_copy_mask#,}"
+	fi
+fi
+
+# Audio copy fallback options
+_audio_copy_fallback_arg=''
+if [ -n "${_audio_copy_enabled:-}" -o -n "${_audio_copy_s_enabled:-}" ]; then
+	audio_copy_fallback=$(echo "$audio_copy_fallback" | tr 'A-Z' 'a-z')
+	case "$audio_copy_fallback" in
+		faac)   : ;;
+		ffaac)  : ;;
+		ffac3)  : ;;
+		lame)   : ;;
+		vorbis) : ;;
+		ffflac) : ;;
+		'')     : ;;
+		*)
+		error "Unknown audio_copy_fallback option: ${audio_copy_fallback}."
+	esac
+	if [ -n "$audio_copy_fallback" ]; then
+		_audio_copy_fallback_arg="--audio-fallback=$audio_copy_fallback"
 	fi
 fi
 
@@ -965,6 +995,7 @@ HandBrakeCLI	$_disable_dvdnav_arg \
 		$_anamorphic_arg \
 		-a "$_audio_tracks" -E "$_audio_encoder" \
 		$_audio_copy_mask_arg \
+		$_audio_copy_fallback_arg \
 		-B "$_audio_bitrate" \
 		-6 "$_audio_mixdown" \
 		$_framerate_arg \
