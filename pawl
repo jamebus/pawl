@@ -726,8 +726,7 @@ case "$chapter_markers" in
 	;;
 	*)
 	chapter_markers='Yes'
-	_chapter_markers_arg='--markers='
-	_chapter_markers_filename="${curdir}/chapters.csv"
+	_chapter_markers_arg='--markers=chapters.csv'
 	;;
 esac
 
@@ -1022,7 +1021,7 @@ HandBrakeCLI	$_disable_dvdnav_arg \
 		$_framerate_arg \
 		-q "$quality" \
 		$_chapter_arg \
-		${_chapter_markers_arg}"${_chapter_markers_filename}" \
+		$_chapter_markers_arg \
 		${_angle_arg} \
 		$_subtitle_arg \
 		$_grayscale_arg \
