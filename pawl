@@ -1022,7 +1022,7 @@ HandBrakeCLI	$_disable_dvdnav_arg \
 		-q "$quality" \
 		$_chapter_arg \
 		$_chapter_markers_arg \
-		${_angle_arg} \
+		$_angle_arg \
 		$_subtitle_arg \
 		$_grayscale_arg \
 		$_deinterlace_arg \
