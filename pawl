@@ -232,11 +232,11 @@ print_config_summary () {
 	echo "x264 options: $_x264_options"
 }
 
-test -z "${1:-}"     -o \
-     "$1" = '--help' -o \
-     "$1" = '-h'     -o \
-     "$1" = 'help'   -o \
-     "$1" = 'usage' && usage
+test -z "${1:-}"         -o \
+     "${1:-}" = '--help' -o \
+     "${1:-}" = '-h'     -o \
+     "${1:-}" = 'help'   -o \
+     "${1:-}" = 'usage' && usage
 
 # All allowable options MUST be here.
 test "$1" = 'config'       -o \
