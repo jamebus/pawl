@@ -265,6 +265,14 @@ print_config_summary () {
 	echo "  Subtitles: $subtitles"
 }
 
+build_list () {
+	echo "$1" | sed 's/[	 ]\+/,/g'
+}
+
+lc () {
+	echo "$1" | tr 'A-Z' 'a-z'
+}
+
 test -z "${1:-}"         -o \
      "${1:-}" = '--help' -o \
      "${1:-}" = '-h'     -o \
@@ -516,10 +524,10 @@ output_format='mkv'
 : ${angle:='1'}
 
 # Normalize
-_audio_tracks=$(echo "$audio_tracks" | sed 's/[ 	]\+/,/g')
-_audio_bitrate=$(echo "$audio_bitrate" | sed 's/[ 	]\+/,/g')
-_audio_mixdown=$(echo "$audio_mixdown" | sed 's/[ 	]\+/,/g')
-_subtitles=$(echo "$subtitles" | sed 's/[ 	]\+/,/g')
+_audio_tracks=$(build_list "$audio_tracks")
+_audio_bitrate=$(build_list "$audio_bitrate")
+_audio_mixdown=$(build_list "$audio_mixdown")
+_subtitles=$(build_list "$subtitles")
 test "$chapters" = 'all' && chapters=''
 
 # Sanitize, these are used bare.
@@ -807,7 +815,7 @@ if [ "$decomb" != 'No' -a -n "$decomb_params" ]; then
 fi
 
 # Audio encoding options
-audio_encoder=$(echo "$audio_encoder" | tr 'A-Z' 'a-z')
+audio_encoder=$(lc "$audio_encoder")
 _audio_encoder=''
 for e in $audio_encoder; do
 	case $e in
@@ -834,7 +842,7 @@ _audio_encoder="${_audio_encoder#,}"
 # Audio copy mask options
 _audio_copy_mask_arg=''
 if [ -n "${_audio_copy_enabled:-}" ]; then
-	audio_copy_mask=$(echo "$audio_copy_mask" | tr 'A-Z' 'a-z')
+	audio_copy_mask=$(lc "$audio_copy_mask")
 	_audio_copy_mask=''
 	if [ "$audio_copy_mask" != 'all' ]; then
 		for m in $audio_copy_mask; do
@@ -860,7 +868,7 @@ fi
 # Audio copy fallback options
 _audio_copy_fallback_arg=''
 if [ -n "${_audio_copy_enabled:-}" -o -n "${_audio_copy_s_enabled:-}" ]; then
-	audio_copy_fallback=$(echo "$audio_copy_fallback" | tr 'A-Z' 'a-z')
+	audio_copy_fallback=$(lc "$audio_copy_fallback")
 	case "$audio_copy_fallback" in
 		faac)   : ;;
 		ffaac)  : ;;
@@ -895,9 +903,9 @@ fi
 
 # x264 options
 _x264_args=''
-x264_profile=$(echo "$x264_profile" | tr 'A-Z' 'a-z')
-x264_preset=$(echo "$x264_preset" | tr 'A-Z' 'a-z')
-x264_tune=$(echo "$x264_tune"  | tr 'A-Z' 'a-z')
+x264_profile=$(lc "$x264_profile")
+x264_preset=$(lc "$x264_preset")
+x264_tune=$(lc "$x264_tune")
 
 case "$x264_profile" in
 	baseline) : ;;
