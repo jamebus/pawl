@@ -503,11 +503,11 @@ output_format='mkv'
 : ${angle:='1'}
 
 # Normalize
-_audio_tracks=$(echo $audio_tracks | sed 's/[    ]\+/,/g')
-_audio_encoder=$(echo $audio_encoder | sed 's/[    ]\+/,/g')
-_audio_bitrate=$(echo $audio_bitrate | sed 's/[    ]\+/,/g')
-_audio_mixdown=$(echo $audio_mixdown | sed 's/[    ]\+/,/g')
-_subtitles=$(echo $subtitles | sed 's/[    ]\+/,/g')
+_audio_tracks=$(echo $audio_tracks | sed 's/[ 	]\+/,/g')
+_audio_encoder=$(echo $audio_encoder | sed 's/[ 	]\+/,/g')
+_audio_bitrate=$(echo $audio_bitrate | sed 's/[ 	]\+/,/g')
+_audio_mixdown=$(echo $audio_mixdown | sed 's/[ 	]\+/,/g')
+_subtitles=$(echo $subtitles | sed 's/[ 	]\+/,/g')
 test "$chapters" = 'all' && chapters=''
 
 if [ -n "$chapters" ]; then
