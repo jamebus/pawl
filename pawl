@@ -37,8 +37,7 @@ if [ "$(uname)" = "SunOS" -a "$SHELL" != "/usr/xpg4/bin/sh" ]; then
 	SHELL=/usr/xpg4/bin/sh
 	unset ENV
 	export SHELL ENV
-	$SHELL "$0" "$@"
-	exit $?
+	exec $SHELL "$0" "$@"
 fi
 
 error () {
