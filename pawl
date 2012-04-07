@@ -57,6 +57,9 @@ assert () {
 
 curdir=$(pwd)
 
+# Avoid failure if config_version isn't set.
+config_version=0
+
 # This is the version of the configuration file. Bump this every time there's a
 # change to the default configuration that would justify a configuration
 # regeneration in existing projects.
@@ -485,8 +488,6 @@ fi
 set -x
 
 # Read in configuration file
-# Avoid an ugly warning if config_version isn't set.
-config_version=0
 if [ -r config ]; then
 	. ./config
 	do_config_migration
@@ -1002,7 +1003,6 @@ echo
 set -x
 
 # Should we suggest a config update?
-: ${config_version:=0}
 if [ $pawl_config_version -gt $config_version ]; then
 	set +x
 	echo '*******************************************************************************'
