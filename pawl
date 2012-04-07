@@ -31,7 +31,7 @@
 # policies, either expressed or implied, of James Kelly.
 #
 
-set -eu
+set -euf
 
 if [ "$(uname)" = "SunOS" -a "$SHELL" != "/usr/xpg4/bin/sh" ]; then
 	SHELL=/usr/xpg4/bin/sh
@@ -271,8 +271,129 @@ build_list () {
 	echo "$1" | sed 's/[	 ]\+/,/g'
 }
 
-lc () {
-	echo "$1" | tr 'A-Z' 'a-z'
+_validate () {
+	local param spec
+	param="$1"
+	spec="$2"
+
+	set -- $spec
+	while [ $# -gt 0 ]; do
+		case $1 in
+			EMPTY)
+				test -z "$param" && return
+				;;
+			YESNO01)
+				case "$param" in
+					[yY][eE][sS]) return ;;
+					[nN][oO])     return ;;
+					0|1)          return ;;
+				esac
+				;;
+			INT)
+				echo "$param" | grep '^[0-9]\+$' >/dev/null && return
+				;;
+			INTALL)
+				case "$param" in
+					[aA][lL][lL]) return ;;
+					*)
+						echo "$param" | grep '^[0-9]\+$' >/dev/null && return
+						;;
+				esac
+				;;
+			INTRANGEALL)
+				case "$param" in
+					[aA][lL][lL]) return ;;
+					*)
+						echo "$param" | grep '^[0-9]\+\(-[0-9]\+\)\?$' >/dev/null && return
+						;;
+				esac
+				;;
+			FLOAT)
+				echo "$param" | grep '^[0-9]\+\(\.[0-9]\+\)\?$' >/dev/null && return
+				;;
+			CROP)
+				echo "$param" | grep '^[0-9]\+/[0-9]\+/[0-9]\+/[0-9]\+$' >/dev/null && return
+				;;
+			FILTER4)
+				echo "$param" | grep '^-\?[0-9]\+:\(-\?[0-9]\+:\)\{2\}-\?[0-9]\+$' >/dev/null && return
+				;;
+			FILTER7)
+				echo "$param" | grep '^-\?[0-9]\+:\(-\?[0-9]\+:\)\{5\}-\?[0-9]\+$' >/dev/null && return
+				;;
+			FILTER17)
+				echo "$param" | grep '^-\?[0-9]\+:\(-\?[0-9]\+:\)\{15\}-\?[0-9]\+$' >/dev/null && return
+				;;
+			*)
+				test "$1" = "$param" && return
+				;;
+		esac
+		shift
+	done
+	return 1
+}
+
+validate () {
+	local option param spec transform s
+	option="$1"
+	param=$(eval echo \"\$$option\")
+	spec="$2"
+	transform="${3:-}"
+	if [ -n "$transform" ]; then
+		param=$(transform "$transform" "$param")
+		eval $option='$param'
+	fi
+
+	_validate "$param" "$spec" && return
+	test -z "$param" && param='(empty)'
+	error "Invalid $option parameter: $param"
+}
+
+validate_list () {
+	local option list spec transform i n
+	option="$1"
+	list=$(eval echo \"\$$option\")
+	spec="$2"
+	transform="${3:-}"
+	if [ -n "$transform" ]; then
+		n=''
+		for i in $list; do
+			n="$n $(transform "$transform" "$i")"
+		done
+		eval $option='${n# }'
+	fi
+
+	if [ -n "$list" ]; then
+		for i in $list; do
+			_validate "$i" "$spec" && continue
+			test -z "$i" && i='(empty)'
+			error "Invalid $option parameter: $i"
+		done
+	else
+		_validate "$list" "$spec" && return
+		error "Invalid $option parameter: (empty)"
+	fi
+	return
+}
+
+transform () {
+	case "$1" in
+		lc)
+			echo "$2" | tr 'A-Z' 'a-z'
+			;;
+		cap)
+			echo "$2" | awk '{ $0 = toupper(substr($0, 1, 1)) tolower(substr($0, 2)); print }'
+			;;
+		yesno)
+			case "$2" in
+				[yY][eE][sS]|1) echo 'Yes'  ;;
+				[nN][oO]|0)     echo 'No'   ;;
+				*)              assert 'transform yesno' ;;
+			esac
+			;;
+		*)
+			error "Unknown transform: $1"
+			;;
+	esac
 }
 
 test -z "${1:-}"         -o \
@@ -292,7 +413,6 @@ test "$1" = 'config'       -o \
      "$1" = 'playsrc'      -o \
      "$1" = 'playout'      || usage 1
 
-# Scaffold
 if [ "$1" = "config" ]; then
 	$echo_n_cmd 'Scaffolding configuration file'
 	if [ -r config ]; then
@@ -313,7 +433,8 @@ if [ "$1" = "config" ]; then
 # General
 #
 
-# Do not use dvdnav for reading DVDs, use dvdread instead. Default: No
+# Do not use dvdnav for reading DVDs, use dvdread instead. [Yes/No/1/0]
+# Default: No
 # If you have a badly-authored or damaged DVD, dvdnav may not be able to read
 # it.
 disable_dvdnav='$disable_dvdnav'
@@ -341,7 +462,7 @@ angle='$angle'
 # Output filename. Do not include a filename extension.
 output='$output'
 
-# Include chapter markers? [YES/NO/Yes/No/1/0] Default: Yes
+# Include chapter markers? [Yes/No/1/0] Default: Yes
 # If you want to include chapter names create a file called chapters.csv in
 # your project's directory and populate it with chapter names in the following
 # format:
@@ -425,12 +546,12 @@ audio_mixdown='$audio_mixdown'
 # Picture
 #
 
-# Video crop. [Auto/AUTO/No/NO/None/NONE/Top:Bottom:Left:Right] Default: Auto
+# Video crop. [Auto/No/None/Top:Bottom:Left:Right] Default: Auto
 # Adjust video cropping. Normally auto works fine. On slight occasion auto
 # can't guess the appropriate values.
 crop='$crop'
 
-# Anamorphic video? [YES/NO/Yes/No/1/0] Default: Yes
+# Anamorphic video? [Yes/No/1/0] Default: Yes
 anamorphic='$anamorphic'
 
 # Anamorphic style? [strict/loose] Default: strict
@@ -441,7 +562,7 @@ anamorphic_style='$anamorphic_style'
 # Picture filters
 #
 
-# Which deinterlacing filter to use? [NO/No/adaptive/pullup]
+# Which deinterlacing filter to use? [No/adaptive/pullup]
 deinterlace='$deinterlace'
 
 # If you're using a deinterlacing filter (set above) you may set it's
@@ -451,7 +572,7 @@ deinterlace='$deinterlace'
 deinterlace_params='$deinterlace_params'
 
 # Selectively deinterlace frames when combing is detected (32detect).
-# [YES/NO/Yes/No/1/0] Default: No
+# [Yes/No/1/0] Default: No
 # This may be also combined with the deinterlacer to catch frames that slip
 # through due to field editing and such.
 decomb='$decomb'
@@ -461,7 +582,7 @@ decomb='$decomb'
 # default: 391:2:3:3:2:40:16:16:10:20:20:4:2:50:24:1:-1
 decomb_params='$decomb_params'
 
-# Is your film is black and white? [YES/NO/Yes/No/1/0] Default: No
+# Is your film is black and white? [Yes/No/1/0] Default: No
 # Setting this to Yes if your film is black and white can reduce green tinge or
 # rainbow shimmering in black and white encodes.
 grayscale='$grayscale'
@@ -486,7 +607,6 @@ fi
 
 set -x
 
-# Read in configuration file
 if [ -r config ]; then
 	. ./config
 	do_config_migration
@@ -494,12 +614,10 @@ else
 	error 'Unable to read configuration file. Aborting.'
 fi
 
-# Is config_version newer than what pawl supports?
 if [ -n "$config_version" -a $config_version -gt $pawl_config_version ]; then
 	error "This version of pawl is too old to support your project's configuration file. I support version $pawl_config_version, your configuration version is $config_version. Re-scaffolding your config will fix this, but you may lose features."
 fi
 
-# Ensure input and output files are defined
 if [ -z "${dvd_source:-}" ]; then
 	error 'dvd_source is not defined.'
 fi
@@ -523,16 +641,11 @@ output_format='mkv'
 : ${crop:='auto'}
 : ${angle:='1'}
 
-# Normalize
-_audio_tracks=$(build_list "$audio_tracks")
-_audio_bitrate=$(build_list "$audio_bitrate")
-_audio_mixdown=$(build_list "$audio_mixdown")
-_subtitles=$(build_list "$subtitles")
-test "$chapters" = 'all' && chapters=''
 
-# Sanitize, these are used bare.
-_audio_bitrate=$(echo "$_audio_bitrate" | $esed_cmd 's,[^A-Za-z0-9\,],,g')
-_audio_mixdown=$(echo "$_audio_mixdown" | $esed_cmd 's,[^A-Za-z0-9\,],,g')
+validate title INT
+validate chapters 'INTRANGEALL EMPTY'
+test "$chapters" = 'all' && chapters=''
+validate angle INT
 
 if [ -n "$chapters" ]; then
 	tc_title_chapters_arg="-T ${title},${chapters}"
@@ -549,7 +662,6 @@ if [ $angle -gt 1 ]; then
 	tc_title_chapters_arg="${tc_title_chapters_arg},${angle}"
 fi
 
-# Scan mode?
 if [ "$1" = 'scan' ]; then
 	HandBrakeCLI -i "$dvd_source" -t 0 -v > handbrake-scan.log 2>&1
 	if has_cmd tcprobe; then
@@ -564,7 +676,6 @@ if [ "$1" = 'scan' ]; then
 	exit
 fi
 
-# 32detect?
 if [ "$1" = '32detect' ]; then
 	require_cmd transcode
 	tc_progress_off_arg=''
@@ -585,7 +696,6 @@ if [ "$1" = '32detect' ]; then
 	exit
 fi
 
-# compare?
 if [ "$1" = 'compare' ]; then
 	_dvd_source="$dvd_source"
 	if [ -b "$dvd_source" ]; then
@@ -605,7 +715,6 @@ if [ "$1" = 'compare' ]; then
 	exit
 fi
 
-# extractframe?
 if [ "$1" = 'extractframe' ]; then
 	if [ -z "${2:-}" ]; then
 		error 'Missing required argument: frame(s) to extract. Aborting.'
@@ -646,319 +755,237 @@ if [ "$1" = 'extractframe' ]; then
 	exit
 fi
 
-# play source?
 if [ "$1" = 'playsrc' ]; then
 	require_cmd mplayer
 	mplayer -dvd-device "$dvd_source" $mplayer_chapters_arg dvd://"${title}"
 	exit
 fi
 
-# play output?
 if [ "$1" = 'playout' ]; then
 	require_cmd mplayer
 	mplayer "${output}.${output_format}"
 	exit
 fi
 
-# Disable dvdnav?
+validate disable_dvdnav YESNO01 yesno
 case "$disable_dvdnav" in
-	[yY][eE][sS])
-	_disable_dvdnav_arg='--no-dvdnav'
-	disable_dvdnav='Yes'
-	;;
+	Yes)
+		_disable_dvdnav_arg='--no-dvdnav'
+		;;
+	No)
+		_disable_dvdnav_arg=''
+		;;
 	*)
-	_disable_dvdnav_arg=''
-	disable_dvdnav='No'
-	;;
+		assert 'disable_dvdnav.'
+		;;
 esac
 
-# Cropping?
-case "$crop" in
-	[nN][oO])
-	_crop_arg="--crop=0:0:0:0"
-	crop='No'
-	;;
-	[nN][oO][nN][eE])
-	_crop_arg="--crop=0:0:0:0"
-	crop='No'
-	;;
-	[aA][uU][tT][oO])
-	_crop_arg=''
-	crop='Yes (Auto)'
-	;;
-	*)
-	_crop_arg="--crop=${crop}"
-	crop="Yes ($crop)"
-	;;
-esac
-
-# Anamorphic?
-case "$anamorphic" in
-	[nN][oO])
-	_anamorphic_arg=''
-	anamorphic='No'
-	;;
-	0)
-	_anamorphic_arg=''
-	anamorphic='No'
-	;;
-	*)
-	anamorphic='Yes'
-	if [ -n "$anamorphic_style" -a "$anamorphic_style" = 'loose' ]; then
-		_anamorphic_arg='--loose-anamorphic'
-		anamorphic_style='Loose'
-	else
-		_anamorphic_arg='--strict-anamorphic'
-		anamorphic_style='Strict'
-	fi
-	;;
-esac
-
-# Chapters?
-_chapter_arg=''
 if [ -n "$chapters" ]; then
 	_chapter_arg="-c $chapters"
 else
 	chapters='All'
+	_chapter_arg=''
 fi
 
-# Chapter markers?
+if [ $angle -gt 1 ]; then
+	_angle_arg="--angle $angle"
+else
+	_angle_arg=''
+fi
+
+validate chapter_markers 'YESNO01 EMPTY' yesno
 case "$chapter_markers" in
-	[nN][oO])
-	_chapter_markers_arg=''
-	chapter_markers='No'
-	;;
-	0)
-	_chapter_markers_arg=''
-	chapter_markers='No'
-	;;
+	No)
+		_chapter_markers_arg=''
+		chapter_markers='No'
+		;;
+	Yes)
+		chapter_markers='Yes'
+		_chapter_markers_arg='--markers=chapters.csv'
+		;;
 	*)
-	chapter_markers='Yes'
-	_chapter_markers_arg='--markers=chapters.csv'
-	;;
+		assert 'chapter_markers.'
+		;;
 esac
 
-# Framerate
-_framerate_arg=''
-if [ "$framerate" = 'same' ]; then
+validate quality FLOAT
+
+validate x264_profile 'baseline main high high10 high422 high444 EMPTY' lc
+validate x264_preset 'ultrafast superfast veryfast faster fast medium slow slower veryslow placebo EMPTY' lc
+validate x264_tune 'film animation grain stillimage psnr ssim fastdecode zerolatency EMPTY' lc
+_x264_args=''
+test -n "$x264_profile" && \
+	_x264_args="$_x264_args --x264-profile=$x264_profile"
+test -n "$x264_preset" && \
+	_x264_args="$_x264_args --x264-preset=$x264_preset"
+test -n "$x264_tune" && \
+	_x264_args="$_x264_args --x264-tune=$x264_tune"
+
+validate framerate 'Same 5 10 12 15 23.976 24 25 29.97' cap
+if [ "$framerate" = 'Same' ]; then
 	framerate='Same as source'
+	_framerate_arg=''
 else
 	_framerate_arg="--rate $framerate"
 fi
 
-# Angle?
-_angle_arg=''
-if [ "$angle" -gt 1 ]; then
-	_angle_arg="--angle $angle"
-fi
+validate_list audio_tracks INT
+_audio_tracks_param=$(build_list "$audio_tracks")
 
-# Subtitles?
-_subtitle_arg=''
-if [ -n "$_subtitles" ]; then
-	_subtitle_arg="-s $_subtitles"
-else
-	subtitles='None'
-fi
-
-# Grayscale?
-case "$grayscale" in
-	[yY][eE][sS])
-	_grayscale_arg='--grayscale'
-	grayscale='Yes'
-	;;
-	1)
-	_grayscale_arg='--grayscale'
-	grayscale='Yes'
-	;;
-	*)
-	grayscale='No'
-	_grayscale_arg=''
-	;;
-esac
-
-# Deinterlacing
-case "$deinterlace" in
-	[aA][dD][aA][pP][tT][iI][vV][eE])
-	_deinterlace_arg='--deinterlace'
-	;;
-	[pP][uU][lL][lL][uU][pP])
-	_deinterlace_arg='--detelecine'
-	;;
-	*)
-	_deinterlace_arg=''
-	deinterlace='No'
-	;;
-esac
-
-if [ "$deinterlace" != 'No' -a -n "$deinterlace_params" ]; then
-	_deinterlace_arg="$_deinterlace_arg=${deinterlace_params}"
-fi
-
-# Decombing
-case "$decomb" in
-	[yY][eE][sS])
-	_decomb_arg='--decomb'
-	decomb='Yes'
-	;;
-	1)
-	_decomb_arg='--decomb'
-	decomb='Yes'
-	;;
-	*)
-	_decomb_arg=''
-	decomb='No'
-	;;
-esac
-
-if [ "$decomb" != 'No' -a -n "$decomb_params" ]; then
-	_decomb_arg="$_decomb_arg=${decomb_params}"
-fi
-
-# Audio encoding options
-audio_encoder=$(lc "$audio_encoder")
-_audio_encoder=''
+validate_list audio_encoder 'faac ffaac copy:aac ffac3 copy:ac3 copy:dts copy:dtshd lame copy:mp3 vorbis ffflac copy' lc
+_audio_encoder_param=''
 for e in $audio_encoder; do
 	case $e in
-		faac)       : ;;
-		ffaac)      : ;;
-		copy:aac)   _audio_copy_s_enabled=1 ;;
-		ffac3)      : ;;
-		copy:ac3)   _audio_copy_s_enabled=1 ;;
-		copy:dts)   _audio_copy_s_enabled=1 ;;
-		copy:dtshd) _audio_copy_s_enabled=1 ;;
-		lame)       : ;;
-		copy:mp3)   _audio_copy_s_enabled=1 ;;
-		vorbis)     : ;;
-		ffflac)     : ;;
-		copy)       _audio_copy_enabled=1   ;;
-		*)
-		error "Unknown audio_encoder option: ${e}."
-		;;
+		copy:*) _audio_copy_s_enabled=1 ;;
+		copy)   _audio_copy_enabled=1   ;;
 	esac
-	_audio_encoder="${_audio_encoder},${e}"
+	_audio_encoder_param="${_audio_encoder_param},${e}"
 done
-_audio_encoder="${_audio_encoder#,}"
+_audio_encoder_param="${_audio_encoder_param#,}"
 
-# Audio copy mask options
+validate_list audio_copy_mask 'aac ac3 dts dtshd mp3 all' lc
 _audio_copy_mask_arg=''
 if [ -n "${_audio_copy_enabled:-}" ]; then
-	audio_copy_mask=$(lc "$audio_copy_mask")
 	_audio_copy_mask=''
 	if [ "$audio_copy_mask" != 'all' ]; then
 		for m in $audio_copy_mask; do
-			case $m in
-				aac)   : ;;
-				ac3)   : ;;
-				dts)   : ;;
-				dtshd) : ;;
-				mp3)   : ;;
-				all)
-				error 'audio_copy_mask option all is mutually exclusive with the others.'
-				;;
-				*)
-				error "Unknown audio_copy_mask option: ${m}."
-				;;
-			esac
+			if [ "$m" = 'all' ]; then
+				error 'audio_copy_mask parameter all is mutually exclusive with the others.'
+			fi
 			_audio_copy_mask="${_audio_copy_mask},${m}"
 		done
 		_audio_copy_mask_arg="--audio-copy-mask=${_audio_copy_mask#,}"
 	fi
 fi
 
-# Audio copy fallback options
-_audio_copy_fallback_arg=''
+validate audio_copy_fallback 'faac ffaac ffac3 lame vorbis ffflac' lc
 if [ -n "${_audio_copy_enabled:-}" -o -n "${_audio_copy_s_enabled:-}" ]; then
-	audio_copy_fallback=$(lc "$audio_copy_fallback")
-	case "$audio_copy_fallback" in
-		faac)   : ;;
-		ffaac)  : ;;
-		ffac3)  : ;;
-		lame)   : ;;
-		vorbis) : ;;
-		ffflac) : ;;
-		'')     : ;;
-		*)
-		error "Unknown audio_copy_fallback option: ${audio_copy_fallback}."
-	esac
-	if [ -n "$audio_copy_fallback" ]; then
-		_audio_copy_fallback_arg="--audio-fallback=$audio_copy_fallback"
-	fi
+	_audio_copy_fallback_arg="--audio-fallback=$audio_copy_fallback"
+else
+	_audio_copy_fallback_arg=''
 fi
 
-# Audio bitrate options
-_audio_bitrate_arg=''
+validate_list audio_bitrate 'INT EMPTY'
 if [ -n "$audio_bitrate" ]; then
-	_audio_bitrate_arg="-B $_audio_bitrate"
+	_audio_bitrate_arg="-B $(build_list "$audio_bitrate")"
 else
 	audio_bitrate='Auto'
+	_audio_bitrate_arg=''
 fi
 
-# Audio mixdown options
-_audio_mixdown_arg=''
+validate_list audio_mixdown 'mono stereo dpl1 dpl2 6ch EMPTY' lc
 if [ -n "$audio_mixdown" ]; then
-	_audio_mixdown_arg="-6 $_audio_mixdown"
+	_audio_mixdown_arg="-6 $(build_list "$audio_mixdown")"
 else
 	audio_mixdown='Auto'
+	_audio_mixdown_arg=''
 fi
 
-# x264 options
-_x264_args=''
-x264_profile=$(lc "$x264_profile")
-x264_preset=$(lc "$x264_preset")
-x264_tune=$(lc "$x264_tune")
-
-case "$x264_profile" in
-	baseline) : ;;
-	main)     : ;;
-	high)     : ;;
-	high10)   : ;;
-	high422)  : ;;
-	high444)  : ;;
-	'')       : ;;
+validate crop 'No None 0 Auto CROP' cap
+case "$crop" in
+	No|None|0)
+		_crop_arg="--crop=0:0:0:0"
+		crop='No'
+		;;
+	Auto)
+		_crop_arg=''
+		crop='Yes (Auto)'
+		;;
+	*/*/*/*)
+		_crop_arg="--crop=${crop}"
+		crop="Yes ($crop)"
+		;;
 	*)
-	error 'Unknown x264_profile option.'
-	;;
+		assert 'crop.'
+		;;
 esac
-if [ -n "$x264_profile" ]; then
-	_x264_args="$_x264_args --x264-profile=$x264_profile"
+
+validate anamorphic 'YESNO01 EMPTY' yesno
+validate anamorphic_style 'Strict Loose EMPTY' cap
+case "$anamorphic" in
+	No)
+		_anamorphic_arg=''
+		;;
+	Yes|'')
+		anamorphic='Yes'
+		case "$anamorphic_style" in
+			Loose)
+				_anamorphic_arg='--loose-anamorphic'
+				;;
+			Strict|'')
+				_anamorphic_arg='--strict-anamorphic'
+				anamorphic_style='Strict'
+				;;
+			*)
+				assert 'anamorphic.'
+				;;
+		esac
+		;;
+	*)
+		assert 'anamorphic.'
+		;;
+esac
+
+validate deinterlace 'No Adaptive Pullup EMPTY' cap
+case "$deinterlace" in
+	Adaptive)
+		validate deinterlace_params 'FILTER4 fast slow slower EMPTY' cap
+		_deinterlace_arg='--deinterlace'
+		;;
+	Pullup)
+		validate deinterlace_params 'FILTER7 EMPTY'
+		_deinterlace_arg='--detelecine'
+		;;
+	No|'')
+		_deinterlace_arg=''
+		deinterlace='No'
+		;;
+	*)
+		assert 'deinterlace.'
+		;;
+esac
+if [ "$deinterlace" != 'No' -a -n "$deinterlace_params" ]; then
+	_deinterlace_arg="$_deinterlace_arg=${deinterlace_params}"
 fi
 
-case "$x264_preset" in
-	ultrafast) : ;;
-	superfast) : ;;
-	veryfast)  : ;;
-	faster)    : ;;
-	fast)      : ;;
-	medium)    : ;;
-	slow)      : ;;
-	slower)    : ;;
-	veryslow)  : ;;
-	placebo)   : ;;
-	'')        : ;;
+validate decomb 'YESNO01 EMPTY' yesno
+validate decomb_params 'FILTER17 EMPTY'
+case "$decomb" in
+	Yes)
+		_decomb_arg='--decomb'
+		;;
+	No|'')
+		_decomb_arg=''
+		decomb='No'
+		;;
 	*)
-	error 'Unknown x264_preset option.'
-	;;
+		assert 'decomb.'
+		;;
 esac
-if [ -n "$x264_preset" ]; then
-	_x264_args="$_x264_args --x264-preset=$x264_preset"
+if [ "$decomb" != 'No' -a -n "$decomb_params" ]; then
+	_decomb_arg="$_decomb_arg=${decomb_params}"
 fi
 
-case "$x264_tune" in
-	film)        : ;;
-	animation)   : ;;
-	grain)       : ;;
-	stillimage)  : ;;
-	psnr)        : ;;
-	ssim)        : ;;
-	fastdecode)  : ;;
-	zerolatency) : ;;
-	'')          : ;;
+validate grayscale 'YESNO01 EMPTY' yesno
+case "$grayscale" in
+	Yes)
+		_grayscale_arg='--grayscale'
+		;;
+	No|'')
+		grayscale='No'
+		_grayscale_arg=''
+		;;
 	*)
-	error 'Unknown x264_tune option.'
-	;;
+		assert 'grayscale.'
+		;;
 esac
-if [ -n "$x264_tune" ]; then
-	_x264_args="$_x264_args --x264-tune=$x264_tune"
+
+validate_list subtitles 'INT EMPTY'
+if [ -n "$subtitles" ]; then
+	_subtitle_arg="-s $(build_list "$subtitles")"
+else
+	subtitles='None'
+	_subtitle_arg=''
 fi
 
 if [ "$1" = 'showconfig' ]; then
@@ -973,7 +1000,6 @@ if [ "$1" != 'run' ]; then
 	assert 'Fell through option handling logic.'
 fi
 
-# Create chapters.csv if needed.
 if [ "$chapter_markers" = 'Yes' -a ! -f 'chapters.csv' ]; then
 	if has_cmd tcprobe; then
 		_number_of_chapters=$(tcprobe -i "$dvd_source" -H 10 -T "$title" 2>&1 | grep ' DVD title ' | $esed_cmd 's,.*: ([0-9]+) chapter.*,\1,')
@@ -1001,7 +1027,6 @@ echo
 ) | tee work.log
 set -x
 
-# Should we suggest a config update?
 if [ $pawl_config_version -gt $config_version ]; then
 	set +x
 	echo '*******************************************************************************'
@@ -1020,7 +1045,7 @@ HandBrakeCLI	$_disable_dvdnav_arg \
 		$_x264_args \
 		$_crop_arg \
 		$_anamorphic_arg \
-		-a "$_audio_tracks" -E "$_audio_encoder" \
+		-a "$_audio_tracks_param" -E "$_audio_encoder_param" \
 		$_audio_copy_mask_arg \
 		$_audio_copy_fallback_arg \
 		$_audio_bitrate_arg \
