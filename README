@@ -41,7 +41,7 @@ REQUIREMENTS
        already.
 
      - HandBrakeCLI
-       At least version 0.9.5, trunk builds >= r3735 will also likely work.
+       At least version 0.9.6, trunk builds >= r4431 will also likely work.
 
      - transcode (optional)
        Used for some auxiliary features; 32detect, extractframe, scan,
