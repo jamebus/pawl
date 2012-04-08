@@ -73,6 +73,7 @@ audio_encoder='copy'
 audio_copy_mask='all'
 audio_copy_fallback='ffflac'
 audio_bitrate=''
+audio_quality=''
 audio_mixdown=''
 subtitles=''
 framerate='same'
@@ -249,6 +250,7 @@ print_config_summary () {
 		echo "  Fallback encoder: $audio_copy_fallback"
 	fi
 	echo "  Bitrate: $audio_bitrate"
+	test -n "$audio_quality" && echo "  Quality: $audio_quality"
 	echo "  Mixdown: $audio_mixdown"
 	echo 'Picture:'
 	echo "  Cropping: $crop"
@@ -291,6 +293,9 @@ _validate () {
 				;;
 			INT)
 				echo "$param" | grep '^[0-9]\+$' >/dev/null && return
+				;;
+			NEGINT)
+				echo "$param" | grep '^-\?[0-9]\+$' >/dev/null && return
 				;;
 			INTALL)
 				case "$param" in
@@ -533,6 +538,14 @@ audio_copy_fallback='$audio_copy_fallback'
 # audio tracks you're including. This parameter is ignored if the track is
 # copied.
 audio_bitrate='$audio_bitrate'
+
+# VBR audio quality metric. [int space separated] Default: none
+# Activates VBR and sets the quality metric. If you're including multiple audio
+# tracks and want to use a different quality metric for some of them, list the
+# values space separated, ordered by the audio tracks you're including. Only
+# lame and vorbis support this option. The scale is encoder-specific, from
+# lowest to highest quality: 10 to 0 (lame), -2 to 10 (vorbis).
+audio_quality='$audio_quality'
 
 # Audio mixdown. [mono/stereo/dpl1/dpl2/6ch or blank/auto] Default: auto
 # The default depends on the source track and capabilities of the target codec.
@@ -873,6 +886,13 @@ else
 	_audio_bitrate_arg=''
 fi
 
+validate_list audio_quality 'NEGINT EMPTY'
+if [ -n "$audio_quality" ]; then
+	_audio_quality_arg="-Q $(build_list "$audio_quality")"
+else
+	_audio_quality_arg=''
+fi
+
 validate_list audio_mixdown 'mono stereo dpl1 dpl2 6ch EMPTY' lc
 if [ -n "$audio_mixdown" ]; then
 	_audio_mixdown_arg="-6 $(build_list "$audio_mixdown")"
@@ -1049,6 +1069,7 @@ HandBrakeCLI	$_disable_dvdnav_arg \
 		$_audio_copy_mask_arg \
 		$_audio_copy_fallback_arg \
 		$_audio_bitrate_arg \
+		$_audio_quality_arg \
 		$_audio_mixdown_arg \
 		$_framerate_arg \
 		-q "$quality" \
