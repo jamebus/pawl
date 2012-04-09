@@ -192,7 +192,7 @@ do_config_migration () {
 	# the same thing.
 	if [ $config_version -le 16 ]; then
 		x264_profile=''
-		x264_tune="$x264_preset"
+		x264_tune="${x264_preset:-grain}"
 		x264_preset='veryslow'
 		test "$x264_tune" = 'normal' && x264_tune=''
 	fi
