@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# pawl -- Super happy fun HandBrake / DVD encoding front-end
+# pawl -- Super happy fun HandBrake front-end
 #
 #
 # Copyright 2008-2011 James Kelly. All rights reserved.
@@ -62,11 +62,11 @@ config_version=0
 # This is the version of the configuration file. Bump this every time there's a
 # change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='22'
+pawl_config_version='23'
 
 # Defaults
 disable_dvdnav='No'
-dvd_source='/dev/dvd'
+source='/dev/dvd'
 output=''
 audio_tracks='1'
 audio_encoder='copy'
@@ -201,6 +201,11 @@ do_config_migration () {
 	if [ $config_version -le 17 ]; then
 		quality=$(awk -v quality="$quality" 'BEGIN { if ( quality < 1 ) print ( 1 - quality ) * 51; exit }')
 	fi
+	# config_version 23 marks the migration from $dvd_source to $source.
+	if [ $config_version -le 22 ]; then
+		source="${dvd_source:-/dev/dvd}"
+		unset dvd_source
+	fi
 }
 
 usage () {
@@ -212,9 +217,9 @@ usage () {
 	echo '       config       (Update or create project configuration file)'
 	echo '       showconfig   (Show project configuration)'
 	echo '       run          (run the encoding)'
-	echo '       scan         (scan the DVD structure with HandBrake and tcprobe)'
+	echo '       scan         (scan the source with HandBrake and tcprobe)'
 	echo '       32detect     (check source for sporadic interlaced frames)'
-	echo '       compare      (compare size of DVD source vs. project output)'
+	echo '       compare      (compare size of source vs. project output)'
 	echo '       extractframe (extract one or more frames. arg: f1,f2,f3-f4[,f4-f5])'
 	echo '       playsrc      (Play source)'
 	echo '       playout      (Play output)'
@@ -225,7 +230,7 @@ print_config_summary () {
 	echo 'General:'
 	echo "  Disable dvdnav: $disable_dvdnav"
 	echo 'Source:'
-	echo "  DVD source: $dvd_source"
+	echo "  Source: $source"
 	echo "  Title: $title"
 	echo "  Chapters: $chapters"
 	if [ $angle -gt 1 ]; then
@@ -448,8 +453,9 @@ disable_dvdnav='$disable_dvdnav'
 # Source
 #
 
-# Source footage. May be a directory or DVD device node. Default: /dev/dvd
-dvd_source='$dvd_source'
+# Source footage. May be a directory containing DVD or BD video, a file, or a
+# device node. Default: /dev/dvd
+source='$source'
 
 # Title to work on. Default: 1
 title='$title'
@@ -624,15 +630,15 @@ if [ -r config ]; then
 	. ./config
 	do_config_migration
 else
-	error 'Unable to read configuration file. Aborting.'
+	error 'Unable to read configuration file.'
 fi
 
 if [ -n "$config_version" -a $config_version -gt $pawl_config_version ]; then
 	error "This version of pawl is too old to support your project's configuration file. I support version $pawl_config_version, your configuration version is $config_version. Re-scaffolding your config will fix this, but you may lose features."
 fi
 
-if [ -z "${dvd_source:-}" ]; then
-	error 'dvd_source is not defined.'
+if [ -z "${source:-}" ]; then
+	error 'source is not defined.'
 fi
 if [ -z "${output:-}" ]; then
 	error 'output is not defined.'
@@ -643,7 +649,7 @@ output_format='mkv'
 
 # Re-set some mandatory defaults if the config file blanked them out.
 : ${disable_dvdnav:='No'}
-: ${dvd_source:='/dev/dvd'}
+: ${source:='/dev/dvd'}
 : ${title:='1'}
 : ${audio_tracks:='1'}
 : ${audio_encoder:='copy'}
@@ -660,25 +666,34 @@ validate chapters 'INTRANGEALL EMPTY'
 test "$chapters" = 'all' && chapters=''
 validate angle INT
 
+# mplayer_chapters_arg		= source is file
+# mplayer_chapters_dvd_arg	= source is DVD
+# mplayer_chapters_bd_arg	= source is BD
 if [ -n "$chapters" ]; then
 	tc_title_chapters_arg="-T ${title},${chapters}"
 	if echo "$chapters" | grep '-' >/dev/null; then
 		mplayer_chapters_arg="-chapter $chapters"
+		mplayer_chapters_dvd_arg="-chapter $chapters"
+		mplayer_chapters_bd_arg="-bluray-chapter $chapters"
 	else
 		mplayer_chapters_arg="-chapter ${chapters}-${chapters}"
+		mplayer_chapters_dvd_arg="-chapter ${chapters}-${chapters}"
+		mplayer_chapters_bd_arg="-bluray-chapter ${chapters}-${chapters}"
 	fi
 else
 	tc_title_chapters_arg="-T ${title},-1"
 	mplayer_chapters_arg=''
+	mplayer_chapters_dvd_arg=''
+	mplayer_chapters_bd_arg=''
 fi
 if [ $angle -gt 1 ]; then
 	tc_title_chapters_arg="${tc_title_chapters_arg},${angle}"
 fi
 
 if [ "$1" = 'scan' ]; then
-	HandBrakeCLI -i "$dvd_source" -t 0 -v > handbrake-scan.log 2>&1
+	HandBrakeCLI -i "$source" -t 0 -v > handbrake-scan.log 2>&1
 	if has_cmd tcprobe; then
-		tcprobe -i "$dvd_source" \
+		tcprobe -i "$source" \
 		        -H 10 -T "$title" > tcprobe-scan.log 2>&1
 	fi
 	set +x
@@ -698,7 +713,7 @@ if [ "$1" = '32detect' ]; then
 		tc_progress_off_arg='--progress_off'
 	fi
 	transcode -J 32detect=force_mode=0:verbose -M 0 -x dvd \
-	          -i "$dvd_source" $tc_title_chapters_arg $tc_progress_off_arg \
+	          -i "$source" $tc_title_chapters_arg $tc_progress_off_arg \
 	          -H 10 2>&1 | grep 'interlaced = yes' | \
 	          tee interlaced_frames.log
 		interlaced_frames=$($esed_cmd 's,.*\[([0-9]+)\].*,\1,' interlaced_frames.log | sort -u | xargs | sed 's/ /,/g')
@@ -710,27 +725,28 @@ if [ "$1" = '32detect' ]; then
 fi
 
 if [ "$1" = 'compare' ]; then
-	_dvd_source="$dvd_source"
-	if [ -b "$dvd_source" ]; then
-		dvd_device=$(realpath "$dvd_source")
-		if ! mount | grep "^${dvd_device} on " >/dev/null 2>&1; then
-			error 'DVD not present in drive. Aborting.'
+	_source_path="$source"
+	_source_device=$(realpath "$source")
+	if [ -b "$_source_device" ]; then
+		_source_path=$(mount | awk -v source_device="$_source_device" '$1 == source_device && $2 == "on" {print $3}')
+		if [ -z "$_source_path" ] ; then
+			error 'Disc not present in drive.'
 		fi
-		_dvd_source=$(mount | grep "^${dvd_device} on " | awk '{print $3}')
-	elif [ ! -e "$dvd_source" ]; then
-		error 'DVD source not present. Aborting.'
+	# -e for file or directory
+	elif [ ! -e "$source" ]; then
+		error 'Source not present.'
 	fi
 	if [ ! -f "${output}.${output_format}" ]; then
-		error 'Project output file not present. Aborting.'
+		error 'Project output file not present.'
 	fi
 	set +x
-	du -sh "$_dvd_source" "${output}.${output_format}"
+	du -sh "$_source_path" "${output}.${output_format}"
 	exit
 fi
 
 if [ "$1" = 'extractframe' ]; then
 	if [ -z "${2:-}" ]; then
-		error 'Missing required argument: frame(s) to extract. Aborting.'
+		error 'Missing required argument: frame(s) to extract.'
 	fi
 
 	require_cmd transcode
@@ -763,15 +779,21 @@ if [ "$1" = 'extractframe' ]; then
 	set -x
 
 	transcode -M 0 -x dvd \
-	          -i "$dvd_source" $tc_title_chapters_arg \
+	          -i "$source" $tc_title_chapters_arg \
 	          -H 10 -c $p -y jpg,null -o frame
 	exit
 fi
 
 if [ "$1" = 'playsrc' ]; then
 	require_cmd mplayer
-	mplayer -dvd-device "$dvd_source" $mplayer_chapters_arg dvd://"${title}"
-	exit
+	if [ -b "$source" -o -d "${source}/VIDEO_TS" ]; then
+		exec mplayer -dvd-device "$source" $mplayer_chapters_dvd_arg -dvdangle "$angle" dvd://"${title}"
+	elif [ -d "${source}/BDMV" ]; then
+		exec mplayer -bluray-device "$source" $mplayer_chapters_bd_arg -bluray-angle "$angle" br://"${title}"
+	elif [ -f "$source" ]; then
+		exec mplayer $mplayer_chapters_arg "$source"
+	fi
+	assert "I don't know how to play this source."
 fi
 
 if [ "$1" = 'playout' ]; then
@@ -1022,7 +1044,7 @@ fi
 
 if [ "$chapter_markers" = 'Yes' -a ! -f 'chapters.csv' ]; then
 	if has_cmd tcprobe; then
-		_number_of_chapters=$(tcprobe -i "$dvd_source" -H 10 -T "$title" 2>&1 | grep ' DVD title ' | $esed_cmd 's,.*: ([0-9]+) chapter.*,\1,')
+		_number_of_chapters=$(tcprobe -i "$source" -H 10 -T "$title" 2>&1 | grep ' DVD title ' | $esed_cmd 's,.*: ([0-9]+) chapter.*,\1,')
 		c=1
 		while [ $c -le $_number_of_chapters ]; do
 			echo "$c,Chapter $c" >> chapters.csv
@@ -1057,7 +1079,7 @@ if [ $pawl_config_version -gt $config_version ]; then
 fi
 
 HandBrakeCLI	$_disable_dvdnav_arg \
-		-i "$dvd_source" \
+		-i "$source" \
 		-f "${output_format}" \
 		-o "${output}.${output_format}" \
 		-t "$title" \
