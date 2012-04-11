@@ -77,9 +77,9 @@ WORKFLOW
      - If the film is not interlaced, check for interlaced frames.
        Sometimes a few will slip through the DVD mastering shop's
        algorithms. All the chapters in your chapters setting will be
-       checked. Note: This feature uses a slightly different detection
-       algorithm than HandBrake's decomb feature. Results will be
-       summarized to your terminal and logged to interlaced_frames.log.
+       checked. Note: This feature uses a different detection algorithm
+       than HandBrake's decomb feature. Results will be summarized to your
+       terminal and logged to interlaced_frames.log.
        pawl 32detect
 
      - If interlaced frames are found, you may extract the frames for
