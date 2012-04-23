@@ -971,7 +971,7 @@ esac
 validate deinterlace 'No Adaptive Pullup EMPTY' cap
 case "$deinterlace" in
 	Adaptive)
-		validate deinterlace_params 'FILTER4 fast slow slower EMPTY' cap
+		validate deinterlace_params 'FILTER4 Fast Slow Slower EMPTY' cap
 		_deinterlace_arg='--deinterlace'
 		;;
 	Pullup)
