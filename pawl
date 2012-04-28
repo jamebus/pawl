@@ -674,11 +674,11 @@ if [ -n "$chapters" ]; then
 	if echo "$chapters" | grep '-' >/dev/null; then
 		mplayer_chapters_arg="-chapter $chapters"
 		mplayer_chapters_dvd_arg="-chapter $chapters"
-		mplayer_chapters_bd_arg="-bluray-chapter $chapters"
+		mplayer_chapters_bd_arg="-bluray-chapter ${chapters%%-*}"
 	else
 		mplayer_chapters_arg="-chapter ${chapters}-${chapters}"
 		mplayer_chapters_dvd_arg="-chapter ${chapters}-${chapters}"
-		mplayer_chapters_bd_arg="-bluray-chapter ${chapters}-${chapters}"
+		mplayer_chapters_bd_arg="-bluray-chapter $chapters"
 	fi
 else
 	tc_title_chapters_arg="-T ${title},-1"
