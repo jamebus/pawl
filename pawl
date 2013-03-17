@@ -137,7 +137,9 @@ if "$which_cmd" HandBrakeCLI >/dev/null 2>&1; then
 			has_compatible_hb=1
 		fi
 		hb_version="svn${hb_version}"
-	elif [ "$hb_version" = '0.9.6' ]; then
+	elif [ "$hb_version" = '0.9.6' \
+	       -o "$hb_version" = '0.9.7' \
+	       -o "$hb_version" = '0.9.8' ]; then
 		has_compatible_hb=1
 	fi
 
