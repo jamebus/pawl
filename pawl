@@ -333,6 +333,11 @@ _validate () {
 			FILTER17)
 				echo "$param" | grep '^-\?[0-9]\+:\(-\?[0-9]\+:\)\{15\}-\?[0-9]\+$' >/dev/null && return
 				;;
+			Auto)
+				case "$param" in
+					[aA][uU][tT][oO]) return ;;
+				esac
+				;;
 			*)
 				test "$1" = "$param" && return
 				;;
@@ -900,8 +905,8 @@ else
 	_audio_copy_fallback_arg=''
 fi
 
-validate_list audio_bitrate 'INT EMPTY'
-if [ -n "$audio_bitrate" ]; then
+validate_list audio_bitrate 'INT EMPTY Auto'
+if [ -n "$audio_bitrate" -a "$audio_bitrate" != 'Auto' ]; then
 	_audio_bitrate_arg="-B $(build_list "$audio_bitrate")"
 else
 	audio_bitrate='Auto'
@@ -915,8 +920,8 @@ else
 	_audio_quality_arg=''
 fi
 
-validate_list audio_mixdown 'mono stereo dpl1 dpl2 6ch EMPTY' lc
-if [ -n "$audio_mixdown" ]; then
+validate_list audio_mixdown 'mono stereo dpl1 dpl2 6ch EMPTY Auto' lc
+if [ -n "$audio_mixdown" -a "$audio_mixdown" != 'Auto' ]; then
 	_audio_mixdown_arg="-6 $(build_list "$audio_mixdown")"
 else
 	audio_mixdown='Auto'
