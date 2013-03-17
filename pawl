@@ -131,8 +131,8 @@ if "$which_cmd" HandBrakeCLI >/dev/null 2>&1; then
 	hb_cmd_path=$("$which_cmd" HandBrakeCLI)
 	hb_version=$(strings "$hb_cmd_path" | \
 	            awk '/^HandBrake [^ ]+$/ {print $2}')
-	if echo "$hb_version" | grep '^svn' >/dev/null 2>&1; then
-		hb_version=$(echo "$hb_version" | sed s,^svn,,)
+	if echo "$hb_version" | grep 'svn' >/dev/null 2>&1; then
+		hb_version=$(echo "$hb_version" | sed s,svn,,)
 		if [ $hb_version -ge 4431 ]; then
 			has_compatible_hb=1
 		fi
