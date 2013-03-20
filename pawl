@@ -62,7 +62,7 @@ config_version=0
 # This is the version of the configuration file. Bump this every time there's a
 # change to the default configuration that would justify a configuration
 # regeneration in existing projects.
-pawl_config_version='23'
+pawl_config_version='24'
 
 # Defaults
 disable_dvdnav='No'
@@ -72,9 +72,9 @@ audio_tracks='1'
 audio_encoder='copy'
 audio_copy_mask='all'
 audio_copy_fallback='ffflac'
-audio_bitrate=''
+audio_bitrate='auto'
 audio_quality=''
-audio_mixdown=''
+audio_mixdown='auto'
 subtitles=''
 framerate='same'
 quality='16'
@@ -544,7 +544,7 @@ audio_copy_mask='$audio_copy_mask'
 # re-encoding.
 audio_copy_fallback='$audio_copy_fallback'
 
-# Audio bitrate. [int space separated or blank/auto] Default: auto
+# Audio bitrate. [int space separated or Auto] Default: Auto
 # The default depends on the codec, mixdown, and samplerate. If you're
 # including multiple audio tracks and want to use a different bitrate for some
 # of them, list the bitrates you want to use space separated, ordered by the
@@ -560,7 +560,7 @@ audio_bitrate='$audio_bitrate'
 # lowest to highest quality: 10 to 0 (lame), -2 to 10 (vorbis).
 audio_quality='$audio_quality'
 
-# Audio mixdown. [mono/stereo/dpl1/dpl2/6ch or blank/auto] Default: auto
+# Audio mixdown. [Auto/mono/stereo/dpl1/dpl2/6ch] Default: Auto
 # The default depends on the source track and capabilities of the target codec.
 # If using a non-passthrough audio format, you may choose your mixdown
 # preference. It will be sanitized to something appropriate in the event you,
@@ -907,8 +907,8 @@ else
 	_audio_copy_fallback_arg=''
 fi
 
-validate_list audio_bitrate 'INT EMPTY Auto'
-if [ -n "$audio_bitrate" -a "$audio_bitrate" != 'Auto' ]; then
+validate_list audio_bitrate 'INT EMPTY Auto' lc
+if [ -n "$audio_bitrate" -a "$audio_bitrate" != 'auto' ]; then
 	_audio_bitrate_arg="-B $(build_list "$audio_bitrate")"
 else
 	audio_bitrate='Auto'
@@ -923,7 +923,7 @@ else
 fi
 
 validate_list audio_mixdown 'mono stereo dpl1 dpl2 6ch EMPTY Auto' lc
-if [ -n "$audio_mixdown" -a "$audio_mixdown" != 'Auto' ]; then
+if [ -n "$audio_mixdown" -a "$audio_mixdown" != 'auto' ]; then
 	_audio_mixdown_arg="-6 $(build_list "$audio_mixdown")"
 else
 	audio_mixdown='Auto'
